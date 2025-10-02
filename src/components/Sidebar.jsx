@@ -6,6 +6,8 @@ import { GiHamburgerMenu } from "react-icons/gi";
 import { FaUserDoctor } from "react-icons/fa6";
 import { MdAddModerator } from "react-icons/md";
 import { IoPersonAddSharp } from "react-icons/io5";
+import { FaPrescription } from "react-icons/fa6";
+
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Context } from "../main";
@@ -52,6 +54,9 @@ const Sidebar = () => {
     navigateTo("/admin/addnew");
     setShow(!show);
   };
+  const prescriptionPage = () => {
+    navigateTo("/prescription");
+  }
 
   return (
     <>
@@ -65,6 +70,7 @@ const Sidebar = () => {
           <MdAddModerator onClick={gotoAddNewAdmin} />
           <IoPersonAddSharp onClick={gotoAddNewDoctor} />
           <AiFillMessage onClick={gotoMessagesPage} />
+          <FaPrescription onClick={prescriptionPage} />
           <RiLogoutBoxFill onClick={handleLogout} />
         </div>
       </nav>

@@ -1,0 +1,158 @@
+.prescription{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-family: open-sans;
+    align-items: center;
+}
+ .presdownload{
+    width: 60%;
+    margin-top: 5%;
+    /* padding: 1%; */
+    /* background-color: whitesmoke; */
+}
+
+.pdf-down-btn{
+    background-color: rgb(12, 187, 187);
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 20px;
+    cursor: pointer;
+}
+
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+.content{
+  padding: 1rem 3rem;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+.header{
+  width: 100%;
+  margin: auto;
+  /* margin-bottom: 2rem; */
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr;
+  color: rgb(33, 109, 222);
+}
+h1{
+  font-size: 2rem;
+}
+.header p{
+  font-size: 1rem;
+  font-weight: 600;
+}
+.speciality{
+  color: rgb(188, 54, 54);
+}
+.Dr-details-bng{
+  text-align: right;
+}
+.Dr-details-bng h1{
+  font-size: 1.5rem;
+  margin-bottom: 0.3rem;
+}
+.Dr-details-bng p{
+  font-size: 0.8rem;
+  margin-top: 0.2rem;
+}
+.logo{
+  width: 10rem;
+  overflow: hidden;
+  padding: 1rem;
+  padding-top: 0;
+  text-align: center;
+  /* border: 1px solid black; */
+}
+.logo img{
+  width: 100%;
+  object-fit: cover;
+}
+.outer-data-box{
+  padding: 1rem;
+  border-bottom: 1px solid black;
+}
+.pDetails{
+  width: 100%;
+  margin: auto;
+  border: 2px solid black;
+}
+.pdata{
+  margin-top: 2rem;
+  padding-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+}
+.rightCol{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.mdata-1r{
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 3rem 0;
+}
+.mdata section{
+  font-size: large;
+  font-weight: 1000;
+  margin-bottom: 6rem;
+}
+.medic-details{
+  display: flex;
+  flex-direction: column;
+  min-height: 250px;
+}
+.medic-header{
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 3fr 1fr 1fr 1fr 1fr;
+  font-size: 1rem;
+}
+.medic-data{
+  padding-bottom: 1rem;
+}
+.data-row{
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 3fr 1fr 1fr 1fr 1fr;
+  font-weight: 500;
+}
+.auth-box{
+  height: 10rem;
+  margin-top: 3rem;
+  margin-bottom: 2rem;
+  position: relative;
+}
+.follow-up-date{
+  top: 0;
+  left: 1rem;
+  position: absolute;
+}
+.sign{
+  bottom: 0;
+  right: 5rem;
+  position: absolute;
+}
+.footer{
+  text-align: center;
+  color: rgb(33, 109, 222);
+  background-color: #fff;
+  padding: 1rem;
+  margin: auto;
+  padding-bottom: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
