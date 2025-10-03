@@ -5,10 +5,16 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { GoCheckCircleFill } from "react-icons/go";
 import { AiFillCloseCircle } from "react-icons/ai";
+import Prescription from "./Prescription";
+import Modal from "react-modal";
 
 const Dashboard = () => {
   const [appointments, setAppointments] = useState([]);
-//use State docs
+  // Modal and prescription state
+  const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
+  const [selectedPatientData, setSelectedPatientData] = useState(null);
+
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
@@ -16,7 +22,6 @@ const Dashboard = () => {
           "http://localhost:5000/api/v1/appointment/getall",
           { withCredentials: true }
         );
-  //fetch doctor
         setAppointments(data.appointments);
       } catch (error) {
         setAppointments([]);
@@ -28,9 +33,8 @@ const Dashboard = () => {
   const handleUpdateStatus = async (appointmentId, status) => {
     try {
       const { data } = await axios.put(
-        `http://localhost:5000/api/v1/appointment/update/${appointmentId}`,
+        `http://localhost:5000/api/v1/appointment/status/${appointmentId}`,
         { status },
-        { withCredentials: true }
       );
       setAppointments((prevAppointments) =>
         prevAppointments.map((appointment) =>
@@ -43,6 +47,25 @@ const Dashboard = () => {
     } catch (error) {
       toast.error(error.response.data.message);
     }
+  };
+
+  const handlePrescriptionClick = async (patientId) => {
+    setSelectedPatientId(patientId);
+    // Fetch patient data
+    try {
+      const { data } = await axios.get(`http://localhost:5000/api/v1/user/patient/${patientId}`);
+      setSelectedPatientData(data.patient);
+      setPrescriptionModalOpen(true);
+    } catch (error) {
+      setSelectedPatientData(null);
+      toast.error("Failed to fetch patient data");
+    }
+  };
+
+  const closePrescriptionModal = () => {
+    setPrescriptionModalOpen(false);
+    setSelectedPatientId(null);
+    setSelectedPatientData(null);
   };
 
   const { isAuthenticated, admin } = useContext(Context);
@@ -91,6 +114,8 @@ const Dashboard = () => {
                 <th>Department</th>
                 <th>Status</th>
                 <th>Visited</th>
+                <th>Booked By</th>
+                <th>Prescription</th>
               </tr>
             </thead>
             <tbody>
@@ -127,11 +152,39 @@ const Dashboard = () => {
                         </select>
                       </td>
                       <td>{appointment.hasVisited === true ? <GoCheckCircleFill className="green"/> : <AiFillCloseCircle className="red"/>}</td>
+                      <td>{appointment.bookedBy ? appointment.bookedBy : (appointment.patientId || "-")}</td>
+                      <td>
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => handlePrescriptionClick(appointment.patientId)}
+                        >
+                          Prescription
+                        </button>
+                      </td>
                     </tr>
                   ))
                 : "No Appointments Found!"}
             </tbody>
           </table>
+
+      <Modal
+        isOpen={prescriptionModalOpen}
+        onRequestClose={closePrescriptionModal}
+        contentLabel="Prescription Modal"
+        ariaHideApp={false}
+        style={{ content: { maxWidth: "700px", margin: "auto" } }}
+      >
+        <Prescription patientId={selectedPatientId} patientData={selectedPatientData} onClose={closePrescriptionModal} />
+      </Modal>
+      <Modal
+        isOpen={prescriptionModalOpen}
+        onRequestClose={closePrescriptionModal}
+        contentLabel="Prescription Modal"
+        ariaHideApp={false}
+        style={{ content: { maxWidth: "700px", margin: "auto" } }}
+      >
+        <Prescription patientId={selectedPatientId} patientData={selectedPatientData} onClose={closePrescriptionModal} />
+      </Modal>
 
           {}
         </div>

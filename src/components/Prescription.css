@@ -1,0 +1,257 @@
+/* PrescriptionWizard.css */
+
+/* Container */
+.container {
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 25px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header */
+.header {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+/* Progress Bar */
+.progressbar {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 30px;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.progressbar li {
+  position: relative;
+  flex: 1;
+  text-align: center;
+  font-size: 14px;
+  color: #7f8c8d;
+  font-weight: 500;
+}
+
+.progressbar li::before {
+  content: counter(step);
+  counter-increment: step;
+  width: 32px;
+  height: 32px;
+  border: 2px solid #bdc3c7;
+  display: block;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  line-height: 30px;
+  background: #fff;
+  color: #7f8c8d;
+  font-weight: 600;
+}
+
+.progressbar li::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: #bdc3c7;
+  top: 15px;
+  left: -50%;
+  z-index: -1;
+}
+
+.progressbar li:first-child::after {
+  content: none;
+}
+
+.progressbar li.active::before {
+  border-color: #3498db;
+  background: #3498db;
+  color: #fff;
+}
+
+.progressbar li.active {
+  color: #3498db;
+}
+
+.progressbar li.active + li::after {
+  background: #3498db;
+}
+
+/* Form Steps */
+.form-step {
+  display: none;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.form-step.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Form Groups */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #2c3e50;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #dcdde1;
+  outline: none;
+  font-size: 14px;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #3498db;
+}
+
+/* Checkbox List */
+.checkbox-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.checkbox-list label {
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Table Styling (Medicines) */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+}
+
+table th,
+table td {
+  border: 1px solid #dfe6e9;
+  padding: 10px;
+  font-size: 14px;
+  text-align: center;
+}
+
+table th {
+  background: #f1f2f6;
+  font-weight: 600;
+}
+
+table select,
+table input {
+  padding: 6px;
+  font-size: 13px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* File Drop Zone */
+.file-drop {
+  padding: 20px;
+  border: 2px dashed #3498db;
+  border-radius: 8px;
+  text-align: center;
+  color: #7f8c8d;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.file-drop:hover {
+  background: #ecf6fc;
+  color: #3498db;
+}
+
+/* Buttons */
+.btn {
+  padding: 10px 18px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 5px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: #3498db;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #2980b9;
+}
+
+.btn-secondary {
+  background: #95a5a6;
+  color: #fff;
+}
+
+.btn-secondary:hover {
+  background: #7f8c8d;
+}
+
+.btn-danger {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #c0392b;
+}
+
+/* Step Footer */
+.step-footer {
+  margin-top: 20px;
+  text-align: right;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .progressbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .progressbar li {
+    text-align: left;
+    margin-bottom: 15px;
+  }
+  .progressbar li::after {
+    display: none;
+  }
+  table th, table td {
+    font-size: 12px;
+    padding: 6px;
+  }
+}
