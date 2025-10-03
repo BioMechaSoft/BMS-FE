@@ -19,6 +19,11 @@ import AddNewAdmin from "./components/AddNewAdmin";
 import "./App.css";
 import Prescription from "./components/Prescription";
 import Preview from "./components/Preview";
+import Settings from "./components/Settings";
+import MedicineSettings from "./components/MedicineSettings";
+import RoleSettings from "./components/RoleSettings";
+import ThemeSettings from "./components/ThemeSettings";
+import AdvancedSettings from "./components/AdvancedSettings";
 
 const App = () => {
   const { isAuthenticated, setIsAuthenticated, admin, setAdmin } =
@@ -54,6 +59,11 @@ const App = () => {
         <Route path="/messages" element={<Messages />} />
         <Route path="/prescription" element={<Prescription />} />
         <Route path="/doctors" element={<Doctors />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/settings/medicine" element={<MedicineSettings />} />
+        <Route path="/settings/roles" element={<RoleSettings />} />
+        <Route path="/settings/theme" element={<ThemeSettings />} />
+        <Route path="/settings/advanced" element={<AdvancedSettings />} />
         <Route path="/preview/:patientId" element={<Preview />} />
       </Routes>
       <ToastContainer position="top-center" />

@@ -2,6 +2,12 @@ import React, { createContext, useState } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 
+// Apply saved theme on initial load
+const savedTheme = localStorage.getItem("dashboard-theme");
+if (savedTheme) {
+  document.body.classList.add(savedTheme);
+}
+
 export const Context = createContext({ isAuthenticated: false });
 
 const AppWrapper = () => {

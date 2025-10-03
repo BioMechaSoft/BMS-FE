@@ -181,7 +181,7 @@ const Dashboard = () => {
         onRequestClose={closePrescriptionModal}
         contentLabel="Prescription Modal"
         ariaHideApp={false}
-        style={{ content: { maxWidth: "700px", margin: "auto" } }}
+        style={{ content: { maxWidth: "100%", margin: "auto" } }}
       >
         <Prescription patientId={selectedPatientId} patientData={selectedPatientData} onClose={closePrescriptionModal} />
       </Modal>

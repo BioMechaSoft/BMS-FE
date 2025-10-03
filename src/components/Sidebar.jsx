@@ -7,6 +7,7 @@ import { FaUserDoctor } from "react-icons/fa6";
 import { MdAddModerator } from "react-icons/md";
 import { IoPersonAddSharp } from "react-icons/io5";
 import { FaPrescription } from "react-icons/fa6";
+import { FiSettings } from "react-icons/fi";
 
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -57,6 +58,10 @@ const Sidebar = () => {
   const prescriptionPage = () => {
     navigateTo("/prescription");
   }
+  const gotoSettingsPage = () => {
+    navigateTo("/settings");
+    setShow(!show);
+  }
 
   return (
     <>
@@ -71,6 +76,7 @@ const Sidebar = () => {
           <IoPersonAddSharp onClick={gotoAddNewDoctor} />
           <AiFillMessage onClick={gotoMessagesPage} />
           <FaPrescription onClick={prescriptionPage} />
+          <FiSettings onClick={gotoSettingsPage} />
           <RiLogoutBoxFill onClick={handleLogout} />
         </div>
       </nav>
