@@ -15,6 +15,7 @@ const Prescription = ({ patientId, onClose }) => {
   const [medicalHistory, setMedicalHistory] = useState("");
   const [diagnosys, setDiagnosys] = useState({ BP: "", Diabetics: "", SPO2: "", Height: "", Weight: "", Others: "" });
   const [medicineAdvice, setMedicineAdvice] = useState([]);
+  const [autoPopulating, setAutoPopulating] = useState(false);
   const [advice, setAdvice] = useState("");
   const [doctorId, setDoctorId] = useState("");
   const [doctorContact, setDoctorContact] = useState("");
@@ -71,6 +72,61 @@ const Prescription = ({ patientId, onClose }) => {
       } catch (e) {}
     })();
   }, [doctorId]);
+
+  // Auto-populate medicines when initialComplain changes (debounced)
+  useEffect(() => {
+    if (!initialComplain || initialComplain.trim().length < 3) return; // wait for meaningful input
+    // don't overwrite manual medicines
+    if (medicineAdvice && medicineAdvice.length > 0) return;
+
+    const id = setTimeout(() => {
+      autoPopulateFromComplaint(initialComplain);
+    }, 600);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialComplain]);
+
+  // score results to pick the most relevant medicines
+  const scoreAdvice = (adviceObj, q) => {
+    const text = ((adviceObj.name || "") + " " + (adviceObj.desese_description || "") + " " + (adviceObj.type || "") + " " + (adviceObj.route || "") + " " + (adviceObj.symptoms || []).join(" ")).toLowerCase();
+    const tokens = (q || "").toLowerCase().split(/\W+/).filter(Boolean);
+    let score = 0;
+    tokens.forEach(t => {
+      if (!t) return;
+      if (text.includes(t)) score += 1;
+      if ((adviceObj.symptoms || []).some(s => s.toLowerCase().includes(t))) score += 2;
+      if ((adviceObj.name || "").toLowerCase() === t) score += 2;
+    });
+    return score;
+  };
+
+  const autoPopulateFromComplaint = async (query, force = false) => {
+    if (!query || (!force && medicineAdvice.length > 0)) return;
+    setAutoPopulating(true);
+    try {
+      const { data } = await axios.get(`http://localhost:5000/api/v1/medical/search`, { params: { q: query } });
+      const advices = data.advices || [];
+      if (!advices.length) return;
+      const scored = advices.map(a => ({ a, score: scoreAdvice(a, query) }));
+      scored.sort((x, y) => y.score - x.score);
+      const top = scored.filter(s => s.score > 0).slice(0, 6).map(s => s.a);
+      if (!top.length) return;
+      const meds = top.map(t => ({
+        name: t.name || "",
+        type: t.type || "",
+        dose: "",
+        frequency: "",
+        route: t.route || "",
+        duration: "",
+      }));
+      if (force) setMedicineAdvice(meds);
+      else setMedicineAdvice(prev => (prev && prev.length ? prev : meds));
+    } catch (e) {
+      // ignore
+    } finally {
+      setAutoPopulating(false);
+    }
+  };
 
   const handleSave = async (printAfter = false) => {
     try {
@@ -142,7 +198,12 @@ const Prescription = ({ patientId, onClose }) => {
               {/* 1 - Vitals & History */}
               <div className="step-slide" style={{ flex: `0 0 ${100/steps.length}%` }}>
                 <div className={`form-step ${currentStep === 1 ? 'active' : ''}`}>
-                  <div className="form-group full-width"><label>Initial Complain</label><input value={initialComplain} onChange={e => setInitialComplain(e.target.value)} /></div>
+                  <div className="form-group full-width"><label>Initial Complain</label>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <input style={{ flex: 1 }} value={initialComplain} onChange={e => setInitialComplain(e.target.value)} />
+                      <button type="button" className="add-btn" onClick={() => autoPopulateFromComplaint(initialComplain, true)} disabled={!initialComplain || initialComplain.trim().length < 2}>{autoPopulating ? 'Populating...' : 'Auto-populate'}</button>
+                    </div>
+                  </div>
                   <div className="form-group full-width"><label>Medical History</label><input value={medicalHistory} onChange={e => setMedicalHistory(e.target.value)} /></div>
                   <div className="form-row">
                     <div className="form-group"><label>BP</label><input value={diagnosys.BP} onChange={e => setDiagnosys({ ...diagnosys, BP: e.target.value })} /></div>

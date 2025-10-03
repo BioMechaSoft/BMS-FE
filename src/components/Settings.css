@@ -1,4 +1,5 @@
 .settings-page {
+  margin: 2rem auto;
   padding: 1.5rem 2rem;
 }
 .settings-header h2 {
@@ -39,3 +40,21 @@
   color: #555;
   font-size: 0.95rem;
 }
+
+/* Medicine settings styles */
+.medicine-page { max-width: 1100px; margin: 1.5rem auto; padding: 1rem; }
+.medicine-grid { display: grid; grid-template-columns: 360px 1fr; gap: 1rem; align-items:start; }
+.medicine-form-card, .medicine-list-card { background: #fff; border-radius: 10px; padding: 1rem; box-shadow: 0 8px 30px rgba(14,35,58,0.06); border: 1px solid rgba(15,23,42,0.04); }
+.medicine-form-card h3 { margin-top: 0; }
+.medicine-form label { display:block; margin-top:0.5rem; color:#334155; font-weight:600 }
+.medicine-form input, .medicine-form textarea { width:100%; padding:0.5rem; border-radius:8px; border:1px solid #e6eef8; margin-top:0.25rem }
+.medicine-form .error { color:#b91c1c; margin-top:0.5rem }
+.list-header { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.75rem }
+.search-input { flex:1; padding:0.5rem 0.75rem; border-radius:8px; border:1px solid #e6eef8 }
+.medicine-table { width:100%; border-collapse:collapse }
+.medicine-table th, .medicine-table td { text-align:left; padding:0.5rem 0.6rem; border-bottom:1px solid #f2f6fb }
+.medicine-table th { color:#334155; font-size:0.9rem }
+.medicine-table td { font-size:0.9rem; color:#444 }
+.medicine-table td button { margin-right:0.4rem }
+
+@media (max-width: 900px){ .medicine-grid { grid-template-columns: 1fr; } }
