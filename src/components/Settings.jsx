@@ -37,30 +37,32 @@ const Settings = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="settings-page">
-      <div className="settings-header">
-        <h2>Settings</h2>
-        <p>Select a setting to configure</p>
-      </div>
+    <section className="page">
+      <div className="settings-page">
+        <div className="settings-header">
+          <h2>Settings</h2>
+          <p>Select a setting to configure</p>
+        </div>
 
-      <div className="settings-grid">
-        {settings.map((s) => (
-          <div
-            key={s.id}
-            className="settings-card"
-            onClick={() => navigate(s.route)}
-            role="button"
-            tabIndex={0}
-          >
-            <div className="settings-card-icon">{s.icon}</div>
-            <div className="settings-card-body">
-              <h3>{s.name}</h3>
-              <p>{s.description}</p>
+        <div className="settings-grid">
+          {settings.map((s) => (
+            <div
+              key={s.id}
+              className="settings-card"
+              onClick={() => navigate(s.route)}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="settings-card-icon">{s.icon}</div>
+              <div className="settings-card-body">
+                <h3>{s.name}</h3>
+                <p>{s.description}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   );
 };
 

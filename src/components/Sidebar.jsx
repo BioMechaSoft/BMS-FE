@@ -6,7 +6,7 @@ import { GiHamburgerMenu } from "react-icons/gi";
 import { FaUserDoctor } from "react-icons/fa6";
 import { MdAddModerator } from "react-icons/md";
 import { IoPersonAddSharp } from "react-icons/io5";
-import { FaPrescription } from "react-icons/fa6";
+// import { FaPrescription } from "react-icons/fa6";
 import { FiSettings } from "react-icons/fi";
 
 import axios from "axios";
@@ -57,9 +57,9 @@ const Sidebar = () => {
     navigateTo("/admin/addnew");
     setShow(!show);
   };
-  const prescriptionPage = () => {
-    navigateTo("/prescription");
-  }
+  // const prescriptionPage = () => {
+  //   navigateTo("/prescription");
+  // }
   const gotoSettingsPage = () => {
     navigateTo("/settings");
     setShow(!show);
@@ -83,7 +83,7 @@ const Sidebar = () => {
           {role === 'Admin' && <IoPersonAddSharp onClick={gotoAddNewDoctor} />}
           {/* Messages and Prescriptions available to Admin, Doctor, Compounder */}
           {(["Admin","Doctor","Compounder"].includes(role)) && <AiFillMessage onClick={gotoMessagesPage} />}
-          {(["Admin","Doctor","Compounder"].includes(role)) && <FaPrescription onClick={prescriptionPage} />}
+          {/* {(["Admin","Doctor","Compounder"].includes(role)) && <FaPrescription onClick={prescriptionPage} />} */}
           {/* Settings: Admin and Doctor have access to settings */}
           {(["Admin","Doctor"].includes(role)) && <FiSettings onClick={gotoSettingsPage} />}
           <RiLogoutBoxFill onClick={handleLogout} />
