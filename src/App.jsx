@@ -66,12 +66,12 @@ const App = () => {
           </RequireAuth>
         } />
         <Route path="/messages" element={
-          <RequireAuth allowedRoles={["Admin","Doctor"]}>
+          <RequireAuth allowedRoles={["Admin","Doctor","Compounder"]}>
             <Messages />
           </RequireAuth>
         } />
         <Route path="/prescription" element={
-          <RequireAuth allowedRoles={["Admin","Doctor"]}>
+          <RequireAuth allowedRoles={["Admin","Doctor","Compounder"]}>
             <Prescription />
           </RequireAuth>
         } />

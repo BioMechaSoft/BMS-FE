@@ -71,6 +71,9 @@ const Login = () => {
             <label>
               <input type="radio" name="role" value="Doctor" checked={role === 'Doctor'} onChange={() => setRole('Doctor')} /> Doctor
             </label>
+            <label style={{ marginLeft: '1rem' }}>
+              <input type="radio" name="role" value="Compounder" checked={role === 'Compounder'} onChange={() => setRole('Compounder')} /> Compounder
+            </label>
           </div>
           <div style={{ justifyContent: "center", alignItems: "center" }}>
             <button type="submit">Login</button>

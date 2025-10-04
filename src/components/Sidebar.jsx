@@ -73,17 +73,19 @@ const Sidebar = () => {
       >
         <div className="links">
           <TiHome onClick={gotoHomePage} />
-          <FaUserDoctor onClick={gotoDoctorsPage} />
+          {/* Doctors & Admin can view doctors list */}
+          {(role === 'Admin' || role === 'Doctor') && <FaUserDoctor onClick={gotoDoctorsPage} />}
           {/* Admin and Doctor can create compounder */}
           {(role === 'Admin' || role === 'Doctor') && (
             <MdAddModerator onClick={gotoAddNewAdmin} />
           )}
           {/* Only Admin can add new doctors */}
           {role === 'Admin' && <IoPersonAddSharp onClick={gotoAddNewDoctor} />}
-          <AiFillMessage onClick={gotoMessagesPage} />
-          <FaPrescription onClick={prescriptionPage} />
-          {/* Settings: doctors have access to a subset; show settings icon for both */}
-          <FiSettings onClick={gotoSettingsPage} />
+          {/* Messages and Prescriptions available to Admin, Doctor, Compounder */}
+          {(["Admin","Doctor","Compounder"].includes(role)) && <AiFillMessage onClick={gotoMessagesPage} />}
+          {(["Admin","Doctor","Compounder"].includes(role)) && <FaPrescription onClick={prescriptionPage} />}
+          {/* Settings: Admin and Doctor have access to settings */}
+          {(["Admin","Doctor"].includes(role)) && <FiSettings onClick={gotoSettingsPage} />}
           <RiLogoutBoxFill onClick={handleLogout} />
         </div>
       </nav>
