@@ -78,7 +78,8 @@ const Sidebar = () => {
           {(role === 'Admin' || role === 'Doctor') && (
             <MdAddModerator onClick={gotoAddNewAdmin} />
           )}
-          <IoPersonAddSharp onClick={gotoAddNewDoctor} />
+          {/* Only Admin can add new doctors */}
+          {role === 'Admin' && <IoPersonAddSharp onClick={gotoAddNewDoctor} />}
           <AiFillMessage onClick={gotoMessagesPage} />
           <FaPrescription onClick={prescriptionPage} />
           {/* Settings: doctors have access to a subset; show settings icon for both */}

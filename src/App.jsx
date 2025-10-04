@@ -34,7 +34,7 @@ const App = () => {
     const fetchUser = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/v1/user/admin/me",
+          "http://localhost:5000/api/v1/user/dashboard/me",
           {
             withCredentials: true,
           }
@@ -56,7 +56,7 @@ const App = () => {
         <Route path="/" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
         <Route path="/doctor/addnew" element={
-          <RequireAuth allowedRoles={["Admin","Doctor"]}>
+          <RequireAuth allowedRoles={["Admin"]}>
             <AddNewDoctor />
           </RequireAuth>
         } />
