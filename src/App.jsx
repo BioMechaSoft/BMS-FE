@@ -24,6 +24,7 @@ import MedicineSettings from "./components/MedicineSettings";
 import RoleSettings from "./components/RoleSettings";
 import ThemeSettings from "./components/ThemeSettings";
 import AdvancedSettings from "./components/AdvancedSettings";
+import RequireAuth from "./components/RequireAuth";
 
 const App = () => {
   const { isAuthenticated, setIsAuthenticated, admin, setAdmin } =
@@ -54,16 +55,56 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/doctor/addnew" element={<AddNewDoctor />} />
-        <Route path="/admin/addnew" element={<AddNewAdmin />} />
-        <Route path="/messages" element={<Messages />} />
-        <Route path="/prescription" element={<Prescription />} />
-        <Route path="/doctors" element={<Doctors />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/settings/medicine" element={<MedicineSettings />} />
-        <Route path="/settings/roles" element={<RoleSettings />} />
-        <Route path="/settings/theme" element={<ThemeSettings />} />
-        <Route path="/settings/advanced" element={<AdvancedSettings />} />
+        <Route path="/doctor/addnew" element={
+          <RequireAuth allowedRoles={["Admin","Doctor"]}>
+            <AddNewDoctor />
+          </RequireAuth>
+        } />
+        <Route path="/admin/addnew" element={
+          <RequireAuth allowedRoles={["Admin","Doctor"]}>
+            <AddNewAdmin />
+          </RequireAuth>
+        } />
+        <Route path="/messages" element={
+          <RequireAuth allowedRoles={["Admin","Doctor"]}>
+            <Messages />
+          </RequireAuth>
+        } />
+        <Route path="/prescription" element={
+          <RequireAuth allowedRoles={["Admin","Doctor"]}>
+            <Prescription />
+          </RequireAuth>
+        } />
+        <Route path="/doctors" element={
+          <RequireAuth allowedRoles={["Admin","Doctor"]}>
+            <Doctors />
+          </RequireAuth>
+        } />
+        <Route path="/settings" element={
+          <RequireAuth allowedRoles={["Admin","Doctor"]}>
+            <Settings />
+          </RequireAuth>
+        } />
+        <Route path="/settings/medicine" element={
+          <RequireAuth allowedRoles={["Admin","Doctor"]}>
+            <MedicineSettings />
+          </RequireAuth>
+        } />
+        <Route path="/settings/roles" element={
+          <RequireAuth allowedRoles={["Admin"]}>
+            <RoleSettings />
+          </RequireAuth>
+        } />
+        <Route path="/settings/theme" element={
+          <RequireAuth allowedRoles={["Admin","Doctor"]}>
+            <ThemeSettings />
+          </RequireAuth>
+        } />
+        <Route path="/settings/advanced" element={
+          <RequireAuth allowedRoles={["Admin"]}>
+            <AdvancedSettings />
+          </RequireAuth>
+        } />
         <Route path="/preview/:patientId" element={<Preview />} />
       </Routes>
       <ToastContainer position="top-center" />

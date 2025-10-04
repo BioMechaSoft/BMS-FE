@@ -18,6 +18,8 @@ const Sidebar = () => {
   const [show, setShow] = useState(false);
 
   const { isAuthenticated, setIsAuthenticated } = useContext(Context);
+  const { admin } = useContext(Context);
+  const role = admin?.role || admin?.userRole || 'Admin';
 
   const handleLogout = async () => {
     await axios
@@ -72,10 +74,14 @@ const Sidebar = () => {
         <div className="links">
           <TiHome onClick={gotoHomePage} />
           <FaUserDoctor onClick={gotoDoctorsPage} />
-          <MdAddModerator onClick={gotoAddNewAdmin} />
+          {/* Admin and Doctor can create compounder */}
+          {(role === 'Admin' || role === 'Doctor') && (
+            <MdAddModerator onClick={gotoAddNewAdmin} />
+          )}
           <IoPersonAddSharp onClick={gotoAddNewDoctor} />
           <AiFillMessage onClick={gotoMessagesPage} />
           <FaPrescription onClick={prescriptionPage} />
+          {/* Settings: doctors have access to a subset; show settings icon for both */}
           <FiSettings onClick={gotoSettingsPage} />
           <RiLogoutBoxFill onClick={handleLogout} />
         </div>

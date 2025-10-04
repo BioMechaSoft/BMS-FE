@@ -8,6 +8,8 @@ const emptyForm = { name: "", symptoms: "", type: "", route: "", desese_descript
 const MedicineSettings = () => {
   const navigate = useNavigate();
   const [medicines, setMedicines] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState(emptyForm);
@@ -34,8 +36,10 @@ const MedicineSettings = () => {
     setLoading(true);
     setError("");
     try {
-      const { data } = await axios.get("http://localhost:5000/api/v1/medical/");
+      const { data } = await axios.get("http://localhost:5000/api/v1/medical/", { params: { page, limit: 10 } });
       setMedicines(data.advices || []);
+      setPage(data.page || 1);
+      setTotalPages(data.totalPages || 1);
     } catch (e) {
       setError("Failed to load medicines");
     } finally {
@@ -46,12 +50,32 @@ const MedicineSettings = () => {
   const searchMedicines = async (q) => {
     setLoading(true);
     try {
-      const { data } = await axios.get("http://localhost:5000/api/v1/medical/search", { params: { q } });
+      const { data } = await axios.get("http://localhost:5000/api/v1/medical/search", { params: { q, page: 1, limit: 10 } });
       setMedicines(data.advices || []);
+      setPage(data.page || 1);
+      setTotalPages(data.totalPages || 1);
     } catch (e) {
       // if backend returns 404 for no results, clear list
       if (e.response && e.response.status === 404) setMedicines([]);
       else setError("Search failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const goToPage = async (p) => {
+    if (p < 1 || p > totalPages) return;
+    setPage(p);
+    setLoading(true);
+    setError("");
+    try {
+      const params = { page: p, limit: 10 };
+      if (search) params.q = search;
+      const { data } = await axios.get(search ? "http://localhost:5000/api/v1/medical/search" : "http://localhost:5000/api/v1/medical/", { params });
+      setMedicines(data.advices || []);
+      setTotalPages(data.totalPages || 1);
+    } catch (err) {
+      setError('Failed to load page');
     } finally {
       setLoading(false);
     }
@@ -105,6 +129,7 @@ const MedicineSettings = () => {
   const clearForm = () => { setForm(emptyForm); setEditingId(null); setError(""); };
 
   return (
+    <>
     <div className="settings-page medicine-page">
       <div className="settings-header">
         <button onClick={() => navigate(-1)} className="back-btn">← Go Back</button>
@@ -171,9 +196,24 @@ const MedicineSettings = () => {
               )
             )}
           </div>
+          <div className="list-footer">
+            <div className="pagination">
+              <button disabled={page <= 1} onClick={() => goToPage(page - 1)}>Prev</button>
+              {Array.from({ length: totalPages }).slice(0, 7).map((_, idx) => {
+                const p = idx + 1;
+                return (
+                  <button key={p} className={p === page ? 'active' : ''} onClick={() => goToPage(p)}>{p}</button>
+                );
+              })}
+              <button disabled={page >= totalPages} onClick={() => goToPage(page + 1)}>Next</button>
+            </div>
+            <div className="footer-note">Showing page {page} of {totalPages}</div>
+          </div>
         </div>
       </div>
     </div>
+    <footer className="settings-footer">PathologyLab Dashboard • © {new Date().getFullYear()}</footer>
+    </>
   );
 };
 

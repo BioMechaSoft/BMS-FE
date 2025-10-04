@@ -11,8 +11,12 @@
 }
 .settings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  /* keep cards a comfortable max width so the grid group can stay centered */
+  grid-template-columns: repeat(auto-fit, minmax(13.75rem, 16.25rem)); /* 220px -> 13.75rem, 260px -> 16.25rem */
   gap: 1rem;
+  max-width: 68.75rem; /* 1100px */
+  margin: 0 auto; /* center the grid container */
+  justify-content: center; /* center any leftover space */
 }
 .settings-card {
   display: flex;
@@ -20,14 +24,14 @@
   align-items: center;
   padding: 1rem;
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 0.5rem; /* 8px */
+  box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.06); /* 2px 8px */
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 .settings-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transform: translateY(-0.1875rem); /* -3px */
+  box-shadow: 0 0.375rem 1.125rem rgba(0, 0, 0, 0.08); /* 6px 18px */
 }
 .settings-card-icon {
   font-size: 2.2rem;
@@ -42,19 +46,36 @@
 }
 
 /* Medicine settings styles */
-.medicine-page { max-width: 1100px; margin: 1.5rem auto; padding: 1rem; }
-.medicine-grid { display: grid; grid-template-columns: 360px 1fr; gap: 1rem; align-items:start; }
-.medicine-form-card, .medicine-list-card { background: #fff; border-radius: 10px; padding: 1rem; box-shadow: 0 8px 30px rgba(14,35,58,0.06); border: 1px solid rgba(15,23,42,0.04); }
+.medicine-page { max-width: 68.75rem; margin: 1.5rem auto; padding: 1rem; }
+.medicine-grid { display: grid; grid-template-columns: 22.5rem 1fr; gap: 1rem; align-items:start; } /* 360px -> 22.5rem */
+.medicine-form-card, .medicine-list-card { background: #fff; border-radius: 0.625rem; padding: 1rem; box-shadow: 0 0.5rem 1.875rem rgba(14,35,58,0.06); border: 0.0625rem solid rgba(15,23,42,0.04); }
 .medicine-form-card h3 { margin-top: 0; }
 .medicine-form label { display:block; margin-top:0.5rem; color:#334155; font-weight:600 }
-.medicine-form input, .medicine-form textarea { width:100%; padding:0.5rem; border-radius:8px; border:1px solid #e6eef8; margin-top:0.25rem }
+.medicine-form input, .medicine-form textarea { width:100%; padding:0.5rem; border-radius:0.5rem; border:0.0625rem solid #e6eef8; margin-top:0.25rem }
 .medicine-form .error { color:#b91c1c; margin-top:0.5rem }
 .list-header { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.75rem }
-.search-input { flex:1; padding:0.5rem 0.75rem; border-radius:8px; border:1px solid #e6eef8 }
+.search-input { flex:1; padding:0.5rem 0.75rem; border-radius:0.5rem; border:0.0625rem solid #e6eef8 }
 .medicine-table { width:100%; border-collapse:collapse }
-.medicine-table th, .medicine-table td { text-align:left; padding:0.5rem 0.6rem; border-bottom:1px solid #f2f6fb }
+.medicine-table th, .medicine-table td { text-align:left; padding:0.5rem 0.6rem; border-bottom:0.0625rem solid #f2f6fb }
 .medicine-table th { color:#334155; font-size:0.9rem }
 .medicine-table td { font-size:0.9rem; color:#444 }
 .medicine-table td button { margin-right:0.4rem }
 
-@media (max-width: 900px){ .medicine-grid { grid-template-columns: 1fr; } }
+@media (max-width: 56.25rem){ /* 900px */
+  .medicine-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 37.5rem){ /* 600px */
+  .settings-page { padding: 1rem; }
+  .settings-grid { grid-template-columns: 1fr; max-width: 100%; }
+}
+
+/* pagination & footer */
+.list-footer { display:flex; justify-content:space-between; align-items:center; padding:0.75rem 0.25rem; border-top:0.0625rem solid #f2f6fb; margin-top:0.75rem }
+.pagination { display:flex; gap:0.35rem; align-items:center }
+.pagination button { padding:0.35rem 0.6rem; border-radius:0.375rem; border:0.0625rem solid #e6eef8; background:#f8fafc; cursor:pointer }
+.pagination button.active { background:#0ea5a6; color:white; border-color:transparent }
+.pagination button:disabled { opacity:0.5; cursor:not-allowed }
+.footer-note { color:#64748b; font-size:0.9rem }
+
+.settings-footer { text-align:center; padding:0.75rem 0; color:#94a3b8; margin-top:1.25rem }

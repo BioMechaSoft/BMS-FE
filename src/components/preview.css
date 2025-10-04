@@ -1,158 +1,92 @@
-.prescription{
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    font-family: open-sans;
-    align-items: center;
+:root{
+  --page-width: 850px;
+  --gutter: 1rem;
+  --muted: #6b7280;
+  --accent: #215dd6;
 }
- .presdownload{
-    width: 60%;
-    margin-top: 5%;
-    /* padding: 1%; */
-    /* background-color: whitesmoke; */
+
+.prescription{
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  padding: 2rem 0;
+}
+
+.presdownload{
+  width: min(95%, var(--page-width));
+  background: #fff;
+  border: 1px solid #e6e9ef;
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgba(14,35,58,0.06);
+  margin-top: 0.5rem;
 }
 
 .pdf-down-btn{
-    background-color: rgb(12, 187, 187);
-    padding: 10px;
-    border-radius: 5px;
-    margin-top: 20px;
-    cursor: pointer;
+  background-color: #0ab6b6;
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+  cursor: pointer;
+  align-self: center;
 }
 
 *{
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
-  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
 }
+
 .content{
-  padding: 1rem 3rem;
+  padding: 1.25rem 1.5rem;
   width: 100%;
   display: flex;
-  flex-wrap: wrap;
   flex-direction: column;
-  overflow-x: hidden;
 }
+
 .header{
   width: 100%;
-  margin: auto;
-  /* margin-bottom: 2rem; */
   display: grid;
-  grid-template-columns: 2fr 1fr 2fr;
-  color: rgb(33, 109, 222);
+  grid-template-columns: 1fr 120px 1fr;
+  gap: 1rem;
+  color: var(--accent);
+  align-items: start;
 }
-h1{
-  font-size: 2rem;
+
+.Dr-details h1{ font-size: 1.25rem; margin-bottom: 0.25rem }
+.Dr-details p{ font-size: 0.9rem; color: var(--muted); margin: 0.15rem 0 }
+.clinic-details p, .logo p{ font-size: 0.85rem; color: var(--muted); margin: 0.15rem 0 }
+
+.logo{ text-align: center }
+.logo img{ max-width: 100%; height: auto }
+
+.outer-data-box{ padding: 0.75rem 0; border-bottom: 1px dashed #e2e8f0 }
+.pDetails{ width: 100%; margin: 0 }
+.pdata{ display: flex; justify-content: space-between; gap: 1rem; font-weight: 600; margin-top: 0.75rem }
+.lCol p, .rightCol p{ margin: 0.15rem 0 }
+.rightCol{ text-align: right }
+
+.mdata-1r{ display:flex; gap:1rem; padding: 0.75rem 0 }
+.mdata section{ font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem }
+
+.medic-details{ display: flex; flex-direction: column; margin-top: 0.5rem }
+.medic-header{ display:grid; grid-template-columns: 40px 1fr 90px 80px 100px 90px; gap:0.5rem; font-size: 0.95rem; color: var(--muted); padding: 0.25rem 0 }
+.medic-data{ padding-bottom: 0.25rem }
+.data-row{ display:grid; grid-template-columns: 40px 1fr 90px 80px 100px 90px; gap:0.5rem; align-items:center; padding: 0.25rem 0; font-weight:500 }
+
+.no-meds{ padding: 0.5rem 0; color: var(--muted) }
+
+.auth-box{ margin-top: 1.5rem; display:flex; justify-content:space-between; align-items:center }
+.follow-up-date, .sign{ margin: 0.25rem 0; font-weight:600 }
+
+.footer{ text-align: center; color: var(--accent); padding: 0.75rem 0 0.5rem 0; font-size: 0.9rem; font-weight: 600 }
+
+@media print{
+  body * { visibility: hidden }
+  .presdownload, .presdownload * { visibility: visible }
+  .presdownload { position: absolute; left: 0; top: 0 }
 }
-.header p{
-  font-size: 1rem;
-  font-weight: 600;
-}
-.speciality{
-  color: rgb(188, 54, 54);
-}
-.Dr-details-bng{
-  text-align: right;
-}
-.Dr-details-bng h1{
-  font-size: 1.5rem;
-  margin-bottom: 0.3rem;
-}
-.Dr-details-bng p{
-  font-size: 0.8rem;
-  margin-top: 0.2rem;
-}
-.logo{
-  width: 10rem;
-  overflow: hidden;
-  padding: 1rem;
-  padding-top: 0;
-  text-align: center;
-  /* border: 1px solid black; */
-}
-.logo img{
-  width: 100%;
-  object-fit: cover;
-}
-.outer-data-box{
-  padding: 1rem;
-  border-bottom: 1px solid black;
-}
-.pDetails{
-  width: 100%;
-  margin: auto;
-  border: 2px solid black;
-}
-.pdata{
-  margin-top: 2rem;
-  padding-bottom: 1rem;
-  display: flex;
-  justify-content: space-between;
-  font-weight: 600;
-}
-.rightCol{
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-.mdata-1r{
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  padding: 3rem 0;
-}
-.mdata section{
-  font-size: large;
-  font-weight: 1000;
-  margin-bottom: 6rem;
-}
-.medic-details{
-  display: flex;
-  flex-direction: column;
-  min-height: 250px;
-}
-.medic-header{
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr 3fr 1fr 1fr 1fr 1fr;
-  font-size: 1rem;
-}
-.medic-data{
-  padding-bottom: 1rem;
-}
-.data-row{
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr 3fr 1fr 1fr 1fr 1fr;
-  font-weight: 500;
-}
-.auth-box{
-  height: 10rem;
-  margin-top: 3rem;
-  margin-bottom: 2rem;
-  position: relative;
-}
-.follow-up-date{
-  top: 0;
-  left: 1rem;
-  position: absolute;
-}
-.sign{
-  bottom: 0;
-  right: 5rem;
-  position: absolute;
-}
-.footer{
-  text-align: center;
-  color: rgb(33, 109, 222);
-  background-color: #fff;
-  padding: 1rem;
-  margin: auto;
-  padding-bottom: 0;
-  font-size: 0.8rem;
-  font-weight: 600;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+
+@media (max-width: 700px){
+  .header{ grid-template-columns: 1fr 80px 1fr }
+  .medic-header, .data-row{ grid-template-columns: 32px 1fr 70px 60px 80px 60px }
 }

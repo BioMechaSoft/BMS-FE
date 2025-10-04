@@ -22,6 +22,8 @@ const Prescription = ({ patientId, onClose }) => {
   const [doctorsList, setDoctorsList] = useState([]);
 
   const steps = ["Patient", "Vitals & History", "Medicines", "Advice", "Review"];
+  const rootRef = React.useRef(null);
+  const keysPressed = React.useRef(new Set());
 
   useEffect(() => {
     const fetchLatestAppointment = async () => {
@@ -72,6 +74,230 @@ const Prescription = ({ patientId, onClose }) => {
       } catch (e) {}
     })();
   }, [doctorId]);
+
+  // keyboard navigation handlers (supports Enter combos and Ctrl/Cmd equivalents)
+  useEffect(() => {
+    const selector = 'input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])';
+
+    const getFocusable = (container) => {
+      if (!container) return [];
+      return Array.from(container.querySelectorAll(selector)).filter(el => el.offsetParent !== null);
+    };
+
+    const focusNext = (current) => {
+      const container = rootRef.current;
+      if (!container) return;
+      const focusables = getFocusable(container);
+      const idx = focusables.indexOf(current);
+      if (idx >= 0 && idx < focusables.length - 1) {
+        focusables[idx + 1].focus();
+        return true;
+      }
+      return false;
+    };
+
+    const focusFirstInStep = (stepIndex) => {
+      const container = rootRef.current;
+      if (!container) return;
+      const slides = Array.from(container.querySelectorAll('.step-slide'));
+      const stepEl = slides[stepIndex];
+      if (!stepEl) return;
+      const focusables = getFocusable(stepEl);
+      if (focusables.length) {
+        focusables[0].focus();
+      }
+    };
+
+    const handleEnterActions = (e, modifiers = {}) => {
+      // keep textareas normal
+      const active = document.activeElement;
+      if (active && active.tagName === 'TEXTAREA') return true;
+
+      const { ctrlOrMeta=false, tab=false, p=false } = modifiers;
+
+      // Ctrl/Cmd+P or Enter+P -> save & print
+      if (p || (keysPressed.current.has('p') || keysPressed.current.has('P'))) {
+        e.preventDefault();
+        handleSave(true);
+        return true;
+      }
+
+      // Ctrl/Cmd+Tab or Enter+Tab -> next step
+      if (tab) {
+        e.preventDefault();
+        setCurrentStep(s => {
+          const next = Math.min(s + 1, steps.length - 1);
+          setTimeout(() => focusFirstInStep(next), 120);
+          return next;
+        });
+        return true;
+      }
+
+      // plain Enter or Ctrl/Cmd+Enter -> focus next field
+      e.preventDefault();
+      const moved = focusNext(active);
+      if (!moved) {
+        setCurrentStep(s => {
+          const next = Math.min(s + 1, steps.length - 1);
+          setTimeout(() => focusFirstInStep(next), 120);
+          return next;
+        });
+      }
+      return true;
+    };
+
+    const onKeyDown = (e) => {
+      // handle Ctrl/Cmd shortcuts first
+      const isCtrl = e.ctrlKey || e.metaKey;
+      if (isCtrl && (e.key === 'p' || e.key === 'P')) {
+        // override browser print
+        e.preventDefault();
+        handleSave(true);
+        return;
+      }
+      if (isCtrl && e.key === 'Tab') {
+        e.preventDefault();
+        handleEnterActions(e, { ctrlOrMeta: true, tab: true });
+        return;
+      }
+      if (isCtrl && e.key === 'Enter') {
+        e.preventDefault();
+        handleEnterActions(e, { ctrlOrMeta: true });
+        return;
+      }
+
+      // Arrow keys: navigate fields/steps
+      if (e.key === 'ArrowRight') {
+        // go to next step (only if not inside editing text in middle)
+        const active = document.activeElement;
+        let allow = true;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+          const val = active.value || '';
+          try {
+            // only navigate step if caret is at end
+            allow = active.selectionEnd === val.length;
+          } catch (err) { allow = false; }
+        }
+        if (allow) {
+          e.preventDefault();
+          setCurrentStep(s => {
+            const next = Math.min(s + 1, steps.length - 1);
+            setTimeout(() => {
+              const slides = Array.from(rootRef.current.querySelectorAll('.step-slide'));
+              const stepEl = slides[next];
+              if (stepEl) {
+                const focusables = Array.from(stepEl.querySelectorAll('input, select, textarea, button')).filter(el => el.offsetParent !== null);
+                if (focusables.length) focusables[0].focus();
+              }
+            }, 80);
+            return next;
+          });
+          return;
+        }
+      }
+      if (e.key === 'ArrowLeft') {
+        const active = document.activeElement;
+        let allow = true;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+          try { allow = active.selectionStart === 0; } catch (err) { allow = false; }
+        }
+        if (allow) {
+          e.preventDefault();
+          setCurrentStep(s => {
+            const prev = Math.max(s - 1, 0);
+            setTimeout(() => {
+              const slides = Array.from(rootRef.current.querySelectorAll('.step-slide'));
+              const stepEl = slides[prev];
+              if (stepEl) {
+                const focusables = Array.from(stepEl.querySelectorAll('input, select, textarea, button')).filter(el => el.offsetParent !== null);
+                if (focusables.length) focusables[0].focus();
+              }
+            }, 80);
+            return prev;
+          });
+          return;
+        }
+      }
+
+      // keep track for Enter+P and Enter+Tab combos
+      keysPressed.current.add(e.key);
+      if (e.key === 'Enter') {
+        // delegate to handler which checks pressed keys for Tab or P
+        const set = keysPressed.current;
+        // Enter+P
+        if (set.has('p') || set.has('P')) {
+          e.preventDefault();
+          handleSave(true);
+          return;
+        }
+        // Enter+Tab
+        if (set.has('Tab')) {
+          e.preventDefault();
+          handleEnterActions(e, { tab: true });
+          return;
+        }
+        // plain Enter
+        handleEnterActions(e, {});
+      }
+
+      // ArrowDown: next focusable field (if caret at end or not an input/textarea)
+      if (e.key === 'ArrowDown') {
+        const active = document.activeElement;
+        let doNavigate = true;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+          const val = active.value || '';
+          try { doNavigate = active.selectionEnd === val.length; } catch (err) { doNavigate = false; }
+        }
+        if (doNavigate) {
+          e.preventDefault();
+          const moved = (function() {
+            const container = rootRef.current;
+            if (!container) return false;
+            const selector = 'input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])';
+            const focusables = Array.from(container.querySelectorAll(selector)).filter(el => el.offsetParent !== null);
+            const idx = focusables.indexOf(document.activeElement);
+            if (idx >= 0 && idx < focusables.length - 1) { focusables[idx+1].focus(); return true; }
+            return false;
+          })();
+          if (!moved) { setCurrentStep(s => Math.min(s+1, steps.length-1)); }
+        }
+      }
+
+      // ArrowUp: previous focusable field (if caret at start or not an input/textarea)
+      if (e.key === 'ArrowUp') {
+        const active = document.activeElement;
+        let doNavigate = true;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+          try { doNavigate = active.selectionStart === 0; } catch (err) { doNavigate = false; }
+        }
+        if (doNavigate) {
+          e.preventDefault();
+          const moved = (function() {
+            const container = rootRef.current;
+            if (!container) return false;
+            const selector = 'input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])';
+            const focusables = Array.from(container.querySelectorAll(selector)).filter(el => el.offsetParent !== null);
+            const idx = focusables.indexOf(document.activeElement);
+            if (idx > 0) { focusables[idx-1].focus(); return true; }
+            return false;
+          })();
+          if (!moved) { setCurrentStep(s => Math.max(s-1, 0)); }
+        }
+      }
+    };
+
+    const onKeyUp = (e) => {
+      keysPressed.current.delete(e.key);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [steps.length, handleSave]);
 
   // Auto-populate medicines when initialComplain changes (debounced)
   useEffect(() => {
@@ -128,7 +354,7 @@ const Prescription = ({ patientId, onClose }) => {
     }
   };
 
-  const handleSave = async (printAfter = false) => {
+  async function handleSave(printAfter = false) {
     try {
       if (!appointmentId) return alert("No appointment found to attach the prescription to.");
       await axios.put(`http://localhost:5000/api/v1/appointment/patient/update/${patientId}`, {
@@ -154,7 +380,7 @@ const Prescription = ({ patientId, onClose }) => {
     } catch (e) {
       alert("Failed to save prescription or notify doctor.");
     }
-  };
+  }
 
   if (loading) return <div>Loading...</div>;
 
@@ -164,7 +390,7 @@ const Prescription = ({ patientId, onClose }) => {
 
   return (
     <section className="page">
-      <div className="container">
+      <div className="container" ref={rootRef}>
         <div className="header">Prescription</div>
 
         <ul className="progressbar">
@@ -174,6 +400,10 @@ const Prescription = ({ patientId, onClose }) => {
             </li>
           ))}
         </ul>
+
+        <div className="shortcuts-hint" style={{ margin: '0.5rem 0 1rem 0', color:'#334155', fontSize:'0.9rem',opacity:0.4 }}>
+          Shortcuts: <kbd>Enter</kbd>=next field, <kbd>Enter</kbd>+<kbd>Tab</kbd>=next step, <kbd>Enter</kbd>+<kbd>P</kbd>=Save & Print, <kbd>Ctrl/⌘</kbd>+<kbd>Enter</kbd>=next field, <kbd>Ctrl/⌘</kbd>+<kbd>P</kbd>=Save & Print
+        </div>
 
         <div className="form-main">
           <div className="steps-slider">

@@ -57,6 +57,11 @@ const Doctors = () => {
                   <p>
                     Gender: <span>{element.gender}</span>
                   </p>
+                  {element.compounders && element.compounders.length > 0 && (
+                    <p>
+                      Compounders: <span>{element.compounders.map(c => `${c.firstName} ${c.lastName}`).join(', ')}</span>
+                    </p>
+                  )}
                 </div>
               </div>
             );
