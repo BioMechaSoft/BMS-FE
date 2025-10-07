@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/api";
 import "./Settings.css";
 
 const emptyForm = { name: "", symptoms: "", type: "", route: "", desese_description: "" };
@@ -36,7 +36,7 @@ const MedicineSettings = () => {
     setLoading(true);
     setError("");
     try {
-      const { data } = await axios.get("http://localhost:5000/api/v1/medical/", { params: { page, limit: 10 } });
+  const { data } = await api.get(`/api/v1/medical/`, { params: { page, limit: 10 } });
       setMedicines(data.advices || []);
       setPage(data.page || 1);
       setTotalPages(data.totalPages || 1);
@@ -50,7 +50,7 @@ const MedicineSettings = () => {
   const searchMedicines = async (q) => {
     setLoading(true);
     try {
-      const { data } = await axios.get("http://localhost:5000/api/v1/medical/search", { params: { q, page: 1, limit: 10 } });
+  const { data } = await api.get(`/api/v1/medical/search`, { params: { q, page: 1, limit: 10 } });
       setMedicines(data.advices || []);
       setPage(data.page || 1);
       setTotalPages(data.totalPages || 1);
@@ -71,7 +71,7 @@ const MedicineSettings = () => {
     try {
       const params = { page: p, limit: 10 };
       if (search) params.q = search;
-      const { data } = await axios.get(search ? "http://localhost:5000/api/v1/medical/search" : "http://localhost:5000/api/v1/medical/", { params });
+  const { data } = await api.get(search ? `/api/v1/medical/search` : `/api/v1/medical/`, { params });
       setMedicines(data.advices || []);
       setTotalPages(data.totalPages || 1);
     } catch (err) {
@@ -96,9 +96,9 @@ const MedicineSettings = () => {
         desese_description: form.desese_description,
       };
       if (editingId) {
-        await axios.put(`http://localhost:5000/api/v1/medical/${editingId}`, payload);
+  await api.put(`/api/v1/medical/${editingId}`, payload);
       } else {
-        await axios.post("http://localhost:5000/api/v1/medical/", payload);
+  await api.post(`/api/v1/medical/`, payload);
       }
       setForm(emptyForm);
       setEditingId(null);
@@ -119,7 +119,7 @@ const MedicineSettings = () => {
   const handleDelete = async (id) => {
     if (!confirm("Delete this medicine?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/v1/medical/${id}`);
+  await api.delete(`/api/v1/medical/${id}`);
       setMedicines(prev => prev.filter(p => p._id !== id));
     } catch (e) {
       setError("Failed to delete");

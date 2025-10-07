@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Context } from "../main";
 import { Navigate } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/api";
 import { toast } from "react-toastify";
 import { GoCheckCircleFill } from "react-icons/go";
 import { AiFillCloseCircle } from "react-icons/ai";
@@ -18,10 +18,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
-        const { data } = await axios.get(
-          "http://localhost:5000/api/v1/appointment/getall",
-          { withCredentials: true }
-        );
+          const { data } = await api.get(`/api/v1/appointment/getall`);
         setAppointments(data.appointments);
       } catch (error) {
         setAppointments([]);
@@ -32,10 +29,7 @@ const Dashboard = () => {
 
   const handleUpdateStatus = async (appointmentId, status) => {
     try {
-      const { data } = await axios.put(
-        `http://localhost:5000/api/v1/appointment/status/${appointmentId}`,
-        { status },
-      );
+      const { data } = await api.put(`/api/v1/appointment/status/${appointmentId}`, { status });
       setAppointments((prevAppointments) =>
         prevAppointments.map((appointment) =>
           appointment._id === appointmentId
@@ -53,7 +47,7 @@ const Dashboard = () => {
     setSelectedPatientId(patientId);
     // Fetch patient data
     try {
-      const { data } = await axios.get(`http://localhost:5000/api/v1/user/patient/${patientId}`);
+  const { data } = await api.get(`/api/v1/user/patient/${patientId}`);
       setSelectedPatientData(data.patient);
       setPrescriptionModalOpen(true);
     } catch (error) {

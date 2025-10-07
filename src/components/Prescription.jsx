@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import "./Prescription.css";
 
@@ -28,7 +28,7 @@ const Prescription = ({ patientId, onClose }) => {
   useEffect(() => {
     const fetchLatestAppointment = async () => {
       try {
-        const { data } = await axios.get(`http://localhost:5000/api/v1/appointment/patient/${patientId}`);
+  const { data } = await api.get(`/api/v1/appointment/patient/${patientId}`);
         const appointments = data.appointments || [];
         if (!appointments.length) return setLoading(false);
         appointments.sort((a, b) => new Date(b.appointment_date) - new Date(a.appointment_date));
@@ -58,7 +58,7 @@ const Prescription = ({ patientId, onClose }) => {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const { data } = await axios.get("http://localhost:5000/api/v1/user/doctors/list");
+  const { data } = await api.get(`/api/v1/user/doctors/list`);
         setDoctorsList(data.doctors || []);
       } catch (e) {}
     };
@@ -69,7 +69,7 @@ const Prescription = ({ patientId, onClose }) => {
     if (!doctorId) return;
     (async () => {
       try {
-        const { data } = await axios.get(`http://localhost:5000/api/v1/user/doctor/${doctorId}`);
+  const { data } = await api.get(`/api/v1/user/doctor/${doctorId}`);
         setDoctorContact(data.doctor?.email || data.doctor?.phone || "");
       } catch (e) {}
     })();
@@ -330,7 +330,7 @@ const Prescription = ({ patientId, onClose }) => {
     if (!query || (!force && medicineAdvice.length > 0)) return;
     setAutoPopulating(true);
     try {
-      const { data } = await axios.get(`http://localhost:5000/api/v1/medical/search`, { params: { q: query } });
+  const { data } = await api.get(`/api/v1/medical/search`, { params: { q: query } });
       const advices = data.advices || [];
       if (!advices.length) return;
       const scored = advices.map(a => ({ a, score: scoreAdvice(a, query) }));
@@ -357,13 +357,13 @@ const Prescription = ({ patientId, onClose }) => {
   async function handleSave(printAfter = false) {
     try {
       if (!appointmentId) return alert("No appointment found to attach the prescription to.");
-      await axios.put(`http://localhost:5000/api/v1/appointment/patient/update/${patientId}`, {
+  await api.put(`/api/v1/appointment/patient/update/${patientId}`, {
         result: [{ initialComplain, medicalHistory, diagnosys, medicineAdvice, advice }],
         status: "Completed",
         doctorId: doctorId || undefined
       });
       if (doctorContact) {
-        await axios.post("http://localhost:5000/api/v1/message/send", {
+  await api.post(`/api/v1/message/send`, {
           firstName: "System",
           lastName: "Notification",
           email: doctorContact.includes("@") ? doctorContact : "",

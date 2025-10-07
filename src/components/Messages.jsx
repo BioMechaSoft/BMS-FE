@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "../utils/api";
 import React, { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { Context } from "../main";
@@ -17,10 +17,7 @@ const Messages = () => {
     try {
       const params = { limit: 10, page: p };
       if (search) params.q = search;
-      const { data } = await axios.get(
-        "http://localhost:5000/api/v1/message/getall",
-        { params, withCredentials: true }
-      );
+      const { data } = await api.get(`/api/v1/message/getall`, { params });
       setMessages(data.messages || []);
       setCounts({ total: data.total || 0, read: data.readCount || 0, unread: data.unreadCount || 0 });
       setPage(data.page || 1);
@@ -43,7 +40,7 @@ const Messages = () => {
 
   const markAsRead = async (id, val = true) => {
     try {
-      await axios.put(`http://localhost:5000/api/v1/message/${id}`, { read: val }, { withCredentials: true });
+  await api.put(`/api/v1/message/${id}`, { read: val });
       fetchMessages(q);
     } catch (err) { toast.error('Failed to update'); }
   };
@@ -51,7 +48,7 @@ const Messages = () => {
   const deleteOne = async (id) => {
     if (!confirm('Delete this message?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/v1/message/${id}`, { withCredentials: true });
+  await api.delete(`/api/v1/message/${id}`);
       toast.success('Deleted');
       fetchMessages(q);
     } catch (err) { toast.error('Delete failed'); }
@@ -61,7 +58,7 @@ const Messages = () => {
     if (selected.length === 0) return toast.info('No messages selected');
     if (!confirm(`Delete ${selected.length} messages?`)) return;
     try {
-      await axios.post(`http://localhost:5000/api/v1/message/bulk-delete`, { ids: selected }, { withCredentials: true });
+  await api.post(`/api/v1/message/bulk-delete`, { ids: selected });
       toast.success('Bulk delete complete');
       setSelected([]);
       fetchMessages(q, page);

@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Context } from "../main";
 import { Navigate, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import axios from "axios";
+import api from "../utils/api";
 
 const AddNewAdmin = () => {
   const { isAuthenticated, setIsAuthenticated, admin } = useContext(Context);
@@ -23,7 +23,7 @@ const AddNewAdmin = () => {
     const fetchDoctors = async () => {
       if (role !== 'Admin') return;
       try {
-        const { data } = await axios.get('http://localhost:5000/api/v1/user/doctors', { withCredentials: true });
+  const { data } = await api.get('/api/v1/user/doctors');
         setAvailableDoctors(data.doctors || []);
       } catch (err) {
         console.error('Failed to fetch doctors for assignment', err);
@@ -41,7 +41,7 @@ const AddNewAdmin = () => {
     e.preventDefault();
     try {
   const payload = { firstName, lastName, email, phone, nic, dob, gender, password, assignedDoctors };
-  await axios.post('http://localhost:5000/api/v1/user/compounder/addnew', payload, { withCredentials: true, headers: { 'Content-Type': 'application/json' } })
+  await api.post('/api/v1/user/compounder/addnew', payload, { headers: { 'Content-Type': 'application/json' } })
         .then((res) => {
           toast.success(res.data.message);
           setIsAuthenticated(true);

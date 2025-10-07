@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/api";
 import { toast } from "react-toastify";
 import "./Settings.css";
 
@@ -17,7 +17,7 @@ const RoleSettings = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("http://localhost:5000/api/v1/user/all", { withCredentials: true });
+  const { data } = await api.get(`/api/v1/user/all`);
       setUsers(data.users || []);
     } catch (err) {
       console.error(err);
@@ -42,7 +42,7 @@ const RoleSettings = () => {
 
   const handleRoleChange = async (userId, newRole) => {
     try {
-      await axios.put(`http://localhost:5000/api/v1/user/role/${userId}`, { role: newRole }, { withCredentials: true });
+  await api.put(`/api/v1/user/role/${userId}`, { role: newRole });
       toast.success("Role updated");
       setUsers((prev) => prev.map(u => u._id === userId ? { ...u, role: newRole } : u));
     } catch (err) {

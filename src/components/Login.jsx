@@ -17,8 +17,9 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
       await axios.post(
-        "http://localhost:5000/api/v1/user/login",
+        `${baseUrl}/api/v1/user/login`,
         { email, password, confirmPassword, role },
         { withCredentials: true, headers: { "Content-Type": "application/json" } }
       )

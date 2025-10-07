@@ -9,7 +9,7 @@ import { IoPersonAddSharp } from "react-icons/io5";
 // import { FaPrescription } from "react-icons/fa6";
 import { FiSettings } from "react-icons/fi";
 
-import axios from "axios";
+import api from "../utils/api";
 import { toast } from "react-toastify";
 import { Context } from "../main";
 import { useNavigate } from "react-router-dom";
@@ -22,17 +22,13 @@ const Sidebar = () => {
   const role = admin?.role || admin?.userRole || 'Admin';
 
   const handleLogout = async () => {
-    await axios
-      .get("http://localhost:5000/api/v1/user/admin/logout", {
-        withCredentials: true,
-      })
-      .then((res) => {
-        toast.success(res.data.message);
-        setIsAuthenticated(false);
-      })
-      .catch((err) => {
-        toast.error(err.response.data.message);
-      });
+    try {
+      const res = await api.get(`/api/v1/user/admin/logout`);
+      toast.success(res.data.message);
+      setIsAuthenticated(false);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Logout failed');
+    }
   };
 
   const navigateTo = useNavigate();

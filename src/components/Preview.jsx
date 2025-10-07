@@ -3,7 +3,7 @@ import "./preview.css";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 
 const Preview = () => {
     const { patientId } = useParams();
@@ -15,7 +15,7 @@ const Preview = () => {
         if (!patientId) return;
         const fetchPatient = async () => {
             try {
-                const { data: ad } = await axios.get(`http://localhost:5000/api/v1/appointment/patient/${patientId}`);
+                const { data: ad } = await api.get(`/api/v1/appointment/patient/${patientId}`);
                 const appts = ad.appointments || [];
                 if (appts.length > 0) {
                     appts.sort((a, b) => new Date(b.appointment_date) - new Date(a.appointment_date));
@@ -40,7 +40,7 @@ const Preview = () => {
                     setPatient(fetched);
                     if (latest.doctorId) {
                         try {
-                            const { data: dd } = await axios.get(`http://localhost:5000/api/v1/user/doctor/${latest.doctorId}`);
+                            const { data: dd } = await api.get(`/api/v1/user/doctor/${latest.doctorId}`);
                             if (dd && dd.doctor) setDoctor(dd.doctor);
                         } catch (e) {
                             // ignore doctor fetch error but keep patient
