@@ -54,7 +54,7 @@ const RoleSettings = () => {
     <section className="page">
       <div className="settings-page">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button onClick={() => navigate(-1)} className="back-btn">← Go Back</button>
+          <button onClick={() => navigate(-1)} className="back-btn add-btn">← Go Back</button>
           <h2 style={{ margin: 0 }}>Role Management</h2>
         </div>
 

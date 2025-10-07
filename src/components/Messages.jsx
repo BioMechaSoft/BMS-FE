@@ -78,13 +78,15 @@ const Messages = () => {
   return (
     <section className="page messages">
       <h1>Messages</h1>
-      <div style={{ display:'flex', gap: '1rem', alignItems:'center', marginBottom: '1rem' }}>
+      <div className="info-section">
         <div>All: {counts.total} • Read: {counts.read} • Unread: {counts.unread}</div>
-        <input placeholder="Search by message, email or phone" value={q} onChange={e => setQ(e.target.value)} />
-        <button onClick={doSearch}>Search</button>
-        <button onClick={() => { setQ(''); fetchMessages(); }}>Clear</button>
+        <div className="search-section">
+          <input placeholder="Search by email or phone" value={q} onChange={e => setQ(e.target.value)} style={{border:'none', borderRadius:'0.175rem', padding:'3px 5px', minWidth:'12rem', cursor:'pointer'}}/>
+          <button className="add-btn" onClick={doSearch} style={{border:'none', borderRadius:'0.175rem', padding:'3px 5px', cursor:'pointer'}}>Search</button>
+          <button onClick={() => { setQ(''); fetchMessages(); }} style={{border:'1px solid #666', borderRadius:'0.175rem', padding:'3px 5px', cursor:'pointer'}}>Clear</button>
+        </div>
         <div style={{ marginLeft: 'auto' }}>
-          <button onClick={bulkDelete} disabled={selected.length===0}>Delete Selected ({selected.length})</button>
+          <button onClick={bulkDelete} disabled={selected.length===0} className="remove-btn" style={{backgroundColor: "#ffbcc4ff",color:'#b10c0cff'}}>Delete Selected ({selected.length})</button>
         </div>
       </div>
 
@@ -93,7 +95,7 @@ const Messages = () => {
           <>
           {messages.map((m) => (
             <div key={m._id} className="card" style={{ borderLeft: m.read ? '4px solid #e2e8f0' : '4px solid #0ea5a6' }}>
-              <div style={{ display:'flex', gap:'1rem', alignItems:'flex-start' }}>
+              <div style={{ display:'flex', padding: '5px', gap:'1rem', alignItems:'flex-start' }}>
                 <input type="checkbox" checked={selected.includes(m._id)} onChange={() => toggleSelect(m._id)} />
                 <div className="details" style={{ flex: 1 }}>
                   <p>From: <strong>{m.firstName} {m.lastName}</strong></p>
@@ -101,9 +103,9 @@ const Messages = () => {
                   <p>Message: <span>{m.message}</span></p>
                   <p style={{ color:'#94a3b8', fontSize:'0.85rem' }}>Sent: {new Date(m.sentAt || m.createdAt).toLocaleString()}</p>
                 </div>
-                <div style={{ display:'flex', flexDirection:'column', gap:'0.5rem' }}>
-                  <button onClick={() => markAsRead(m._id, !m.read)}>{m.read ? 'Mark Unread' : 'Mark Read'}</button>
-                  <button onClick={() => deleteOne(m._id)} style={{ color: '#b91c1c' }}>Delete</button>
+                <div style={{ display:'flex', flexDirection:'row', gap:'0.5rem' }}>
+                  <button className="secondary" onClick={() => markAsRead(m._id, !m.read)}>{m.read ? 'Mark Unread' : 'Mark Read'}</button>
+                  <button className="remove-btn" onClick={() => deleteOne(m._id)} style={{ color: '#b91c1c' }}>Delete</button>
                 </div>
               </div>
             </div>

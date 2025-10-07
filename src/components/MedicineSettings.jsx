@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import "./Settings.css";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+// import {fa-solid fa-pen} from "@fortawesome/free-solid-svg-icons";
 
 const emptyForm = { name: "", symptoms: "", type: "", route: "", desese_description: "" };
 
@@ -133,7 +135,7 @@ const MedicineSettings = () => {
       <>
         <div className="settings-page medicine-page">
           <div className="settings-header">
-            <button onClick={() => navigate(-1)} className="back-btn">← Go Back</button>
+            <button onClick={() => navigate(-1)} className="back-btn add-btn">← Go Back</button>
             <h2>Medicine Catalog</h2>
             <p className="muted">Create, search and manage medicines used in prescriptions.</p>
           </div>
@@ -186,7 +188,7 @@ const MedicineSettings = () => {
                             <td>{m.type}</td>
                             <td>{m.route}</td>
                             <td title={m.desese_description}>{m.desese_description?.slice(0, 80)}</td>
-                            <td>
+                            <td className="td-button-box">
                               <button className="secondary" onClick={() => handleEdit(m)}>Edit</button>
                               <button className="remove-btn" onClick={() => handleDelete(m._id)}>Delete</button>
                             </td>

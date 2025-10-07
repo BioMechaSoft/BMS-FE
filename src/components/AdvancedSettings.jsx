@@ -8,7 +8,7 @@ const AdvancedSettings = () => {
   return (
     <section className="page">
       <div className="settings-page">
-        <button onClick={() => navigate(-1)} className="back-btn">
+        <button onClick={() => navigate(-1)} className="back-btn add-btn">
           ← Go Back
         </button>
         <h2>Advanced Settings</h2>

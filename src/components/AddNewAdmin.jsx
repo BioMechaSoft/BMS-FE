@@ -113,7 +113,8 @@ const AddNewAdmin = () => {
               onChange={(e) => setDob(e.target.value)}
             />
           </div>
-          <div>
+          <div className="outer-gnp-box" style={{ flexDirection: 'column',  }}>
+            <div className="gnp-box">
             <select value={gender} onChange={(e) => setGender(e.target.value)}>
               <option value="">Select Gender</option>
               <option value="Male">Male</option>
@@ -124,14 +125,15 @@ const AddNewAdmin = () => {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-            />
+              />
+            </div>
             {/* If Admin creating a compounder, allow assignment to multiple doctors. If doctor creating, assign to themselves */}
             {role === 'Admin' ? (
-              <div style={{ marginTop: '0.75rem' }}>
+              <div style={{ marginTop: '0.75rem', justifyContent: 'space-between' }} className="assign-doctor-box">
                 <label style={{ fontWeight: 700 }}>Assign to doctors (multiple):</label>
-                <div style={{ maxHeight: '220px', overflowY: 'auto', marginTop: '0.5rem' }}>
+                <div style={{ maxHeight: '100px', width: '400px', overflowY: 'auto',  marginTop: '0.5rem',flexDirection:'column', alignItems: 'start' }}>
                   {availableDoctors.map((d) => (
-                    <label key={d._id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', padding: '0.25rem 0' }}>
+                    <label key={d._id} style={{ minHeight:"1.2rem", overflow:'hidden', display: 'flex', gap: '0.5rem', alignItems: 'center', padding: '0.25rem' }}>
                       <input type="checkbox" checked={assignedDoctors.includes(d._id)} onChange={(e) => {
                         if (e.target.checked) setAssignedDoctors((s) => [...s, d._id]);
                         else setAssignedDoctors((s) => s.filter((id) => id !== d._id));

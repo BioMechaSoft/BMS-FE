@@ -29,36 +29,32 @@ const Doctors = () => {
         {doctors && doctors.length > 0 ? (
           doctors.map((element) => {
             return (
-              <div className="card">
-                <img
-                  src={element.docAvatar && element.docAvatar.url?element.docAvatar && element.docAvatar.url:'./doc1.jpg'}
-                  alt="doctor avatar"
-                />
-                <h4>{`${element.firstName} ${element.lastName}`}</h4>
-                <div className="details">
-                  <p>
-                    Email: <span>{element.email}</span>
-                  </p>
-                  <p>
-                    Phone: <span>{element.phone}</span>
-                  </p>
-                  <p>
-                    DOB: <span>{element.dob.substring(0, 10)}</span>
-                  </p>
-                  <p>
-                    Department: <span>{element.doctorDepartment}</span>
-                  </p>
-                  <p>
-                    NIC: <span>{element.nic}</span>
-                  </p>
-                  <p>
-                    Gender: <span>{element.gender}</span>
-                  </p>
-                  {element.compounders && element.compounders.length > 0 && (
+              <div class="doc-card">
+                <div class="doc-card__inner">
+                  <div class="doc-card__avatar">
+                    <img src={element.docAvatar && element.docAvatar.url?element.docAvatar && element.docAvatar.url:'./doc1.jpg'}
+                    alt="doctor avatar" />
+                  </div>
+
+                  <h3 class="doc-card__name">{`${element.firstName} ${element.lastName}`}</h3>
+                  <p class="doc-card__role">NIC: {element.nic}</p>
+
+                  <div class="doc-card__info">
                     <p>
-                      Compounders: <span>{element.compounders.map(c => `${c.firstName} ${c.lastName}`).join(', ')}</span>
+                      <span class="label">Email:</span> {element.email}
                     </p>
-                  )}
+                    <p>
+                      <span class="label">Phone:</span> {element.phone}
+                    </p>
+                    <p>
+                      <span class="label">DOB:</span> {element.dob.substring(0, 10)}
+                    </p>
+                  </div>
+
+                  <div class="doc-card__actions">
+                    <div class="doc-btn btn--primary">{element.doctorDepartment}</div>
+                    <div class="doc-btn btn--ghost">{element.gender}</div>
+                  </div>
                 </div>
               </div>
             );

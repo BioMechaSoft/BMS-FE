@@ -389,9 +389,9 @@ const Prescription = ({ patientId, onClose }) => {
   const goToStep = i => setCurrentStep(i);
 
   return (
-    <section className="page">
-      <div className="container" ref={rootRef}>
-        <div className="header">Prescription</div>
+    // <section className="main">
+      <div className=" content-box" ref={rootRef}>
+        <div className="header pres-header">Prescription</div>
 
         <ul className="progressbar">
           {steps.map((label, idx) => (
@@ -507,7 +507,7 @@ const Prescription = ({ patientId, onClose }) => {
 
         <div className="wizard-footer">
           {currentStep > 0 && <button className="btn secondary" onClick={prevStep}>Back</button>}
-          {currentStep < steps.length - 1 && <button className="btn" onClick={nextStep}>Next</button>}
+          {currentStep < steps.length - 1 && <button className="btn secondary" onClick={nextStep}>Next</button>}
           {currentStep === steps.length - 1 && (
             <>
               <button className="btn btn-primary" onClick={() => handleSave(false)}>Save</button>
@@ -517,7 +517,7 @@ const Prescription = ({ patientId, onClose }) => {
         </div>
 
       </div>
-    </section>
+    // </section>
   );
 };
 
