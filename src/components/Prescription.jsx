@@ -338,12 +338,12 @@ const Prescription = ({ patientId, onClose }) => {
       const top = scored.filter(s => s.score > 0).slice(0, 6).map(s => s.a);
       if (!top.length) return;
       const meds = top.map(t => ({
-        name: t.name || "",
-        type: t.type || "",
-        dose: "",
-        frequency: "",
-        route: t.route || "",
-        duration: "",
+        name: t?.name || "",
+        type: t?.type || "",
+        dose: t?.dose||"0",
+        frequency: t?.frequency||"0",
+        route: t?.route || "mouth",
+        duration:t?.duration|| "0",
       }));
       if (force) setMedicineAdvice(meds);
       else setMedicineAdvice(prev => (prev && prev.length ? prev : meds));
