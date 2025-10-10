@@ -130,8 +130,35 @@ body {
   outline: none;
 }
 
-.table-banner {
+.middle-banner{
+  background-color: #fff;
+  padding: 1rem;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 10vh;
+}
+
+.filter-box select{
+  height: 2rem;
+  /* background-color: ; */
+}
+
+.table-container {
   overflow-x: auto;
+}
+.table-banner .heading-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+.table-banner .heading-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
 }
 
 .dashboard .banner table .value-pending {
@@ -204,8 +231,7 @@ body {
     font-size: 1.5rem;
     background-color: #3939d9f2;
   }
-  .wrapper svg{
-  }
+  
   .show {
     width: 80px;
     left: -6.5rem
