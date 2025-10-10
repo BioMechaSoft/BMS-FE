@@ -1,25 +1,44 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useContext } from 'react';
 import "./preview.css";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useParams } from 'react-router-dom';
 import api from '../utils/api';
+import { Context } from '../main';
+
+// Helper: format date
+const formatDate = (date) => date ? new Date(date).toLocaleDateString() : '';
 
 const Preview = () => {
     const { patientId } = useParams();
     const [patient, setPatient] = useState(null);
     const [doctor, setDoctor] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [editMode, setEditMode] = useState(false);
+    const { isAuthenticated, admin } = useContext(Context);
+
+    // Role check
+    const canEdit = isAuthenticated && ["Admin", "Doctor"].includes(admin?.role);
+
 
     useEffect(() => {
         if (!patientId) return;
-        const fetchPatient = async () => {
+        const fetchAndComplete = async () => {
             try {
                 const { data: ad } = await api.get(`/api/v1/appointment/patient/${patientId}`);
                 const appts = ad.appointments || [];
                 if (appts.length > 0) {
                     appts.sort((a, b) => new Date(b.appointment_date) - new Date(a.appointment_date));
                     const latest = appts[0];
+                    // Always set status to Completed if not already
+                    if (latest.status !== 'Completed') {
+                        try {
+                            await api.put(`/api/v1/appointment/patient/update/${patientId}`, { status: 'Completed' });
+                        } catch (err) {
+                            // ignore error, still show prescription
+                        }
+                    }
                     const fetched = {
                         _id: latest.patientId || patientId,
                         firstName: latest.firstName || latest.patientName || '',
@@ -35,7 +54,11 @@ const Preview = () => {
                         appointmentId: latest._id,
                         appointment_date: latest.appointment_date,
                         examinedBy: latest.examinedBy || latest.doctorName || '',
-                        reportdate: latest.reportdate || ''
+                        reportdate: latest.reportdate || '',
+                        address: latest.address || '',
+                        department: latest.department || '',
+                        price: latest.price || 0,
+                        paymentStatus: latest.paymentStatus || '',
                     };
                     setPatient(fetched);
                     if (latest.doctorId) {
@@ -43,7 +66,6 @@ const Preview = () => {
                             const { data: dd } = await api.get(`/api/v1/user/doctor/${latest.doctorId}`);
                             if (dd && dd.doctor) setDoctor(dd.doctor);
                         } catch (e) {
-                            // ignore doctor fetch error but keep patient
                             setDoctor(null);
                         }
                     }
@@ -51,88 +73,75 @@ const Preview = () => {
                     setPatient(null);
                 }
             } catch (e) {
-                console.error('Preview fetch error', e);
                 setPatient(null);
             } finally {
                 setLoading(false);
             }
         };
-        fetchPatient();
+        fetchAndComplete();
     }, [patientId]);
 
+
+    // PDF Download (A4, margin)
     const downLoadPDF = async () => {
         const input = document.getElementById('pdfDownload');
         if (!input) return;
         const canvas = await html2canvas(input, { scale: 2, useCORS: true });
-        // slice the canvas into A4 pages to avoid duplicate rendering
         const imgWidthPx = canvas.width;
         const imgHeightPx = canvas.height;
-
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pageWidthMm = pdf.internal.pageSize.getWidth();
         const pageHeightMm = pdf.internal.pageSize.getHeight();
-        const marginMm = 8;
-
-        // convert pixels to mm (approx, assuming 96dpi)
+        const marginMm = 12;
         const pxToMm = (px) => (px * 0.2645833333);
         const imgWidthMm = pxToMm(imgWidthPx);
         const imgHeightMm = pxToMm(imgHeightPx);
-
         const scale = (pageWidthMm - marginMm * 2) / imgWidthMm;
         const scaledImgHeightMm = imgHeightMm * scale;
-
-        // height of one PDF page content area in mm
         const pageContentHeightMm = pageHeightMm - marginMm * 2;
         const totalPages = Math.ceil(scaledImgHeightMm / pageContentHeightMm);
-
-        // create an offscreen canvas to extract slices
         const sliceHeightPx = Math.floor((pageContentHeightMm / scale) / 0.2645833333);
         const tmpCanvas = document.createElement('canvas');
         tmpCanvas.width = imgWidthPx;
         tmpCanvas.height = sliceHeightPx;
         const tctx = tmpCanvas.getContext('2d');
-
         for (let page = 0; page < totalPages; page++) {
             const sx = 0;
             const sy = page * sliceHeightPx;
             const sw = imgWidthPx;
             const sh = Math.min(sliceHeightPx, imgHeightPx - sy);
-
-            // clear and draw slice
             tctx.clearRect(0, 0, tmpCanvas.width, tmpCanvas.height);
             tctx.drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
             const imgData = tmpCanvas.toDataURL('image/png');
-
             const w = pageWidthMm - marginMm * 2;
-            const h = (sh * 0.2645833333) * scale; // mm
-
+            const h = (sh * 0.2645833333) * scale;
             if (page > 0) pdf.addPage();
             pdf.addImage(imgData, 'PNG', marginMm, marginMm, w, h);
         }
-
         const fileName = `${(patient?.firstName || 'prescription')}.pdf`;
         pdf.save(fileName);
     };
+
 
     if (loading) return <div className='prescription'><div>Loading...</div></div>;
     if (!patient) return <div className='prescription'><div>Patient not found.</div></div>;
 
     const report = Array.isArray(patient.report) && patient.report.length > 0 ? patient.report[0] : null;
-
     const clinic = {
         name: doctor?.clinicName || doctor?.hospital || '',
         address: doctor?.address || '',
         contact: doctor?.phone || doctor?.email || ''
     };
+    const medicines = Array.isArray(report?.medicineAdvice) ? report.medicineAdvice : (report?.medicineAdvice ? [report?.medicineAdvice] : []);
 
-    const medicines = Array.isArray(report?.medicineAdvice) ? report.medicineAdvice : (report?.medicineAdvice ? [report.medicineAdvice] : []);
-
+    // --- UI ---
     return (
-        <section className='page'>
+        <section className='page modern-preview'>
             <div className='prescription'>
                 <div className='presdownload' id='pdfDownload'>
                     <div className='content'>
-                        <header className="header">
+                        {/* Header Section */}
+                        <header className="header modern-header">
                             <div className="Dr-details">
                                 <h1>{doctor ? `Dr. ${doctor.firstName || ''} ${doctor.lastName || ''}` : (clinic.name || 'Doctor')}</h1>
                                 {doctor?.doctorDepartment && <p className='speciality'>{doctor.doctorDepartment}</p>}
@@ -141,20 +150,19 @@ const Preview = () => {
                                 {doctor?.extra && <p>{doctor.extra}</p>}
                                 {clinic.contact && <p>Contact: {clinic.contact}</p>}
                             </div>
-
                             <div className="logo">
                                 <img src={'/logo.png'} alt="logo" />
                                 {clinic.name && <p className='clinic-name'>{clinic.name}</p>}
                             </div>
-
                             <div className="clinic-details">
                                 {clinic.address && <p>{clinic.address}</p>}
                                 {doctor?.visitingHours && <p>{doctor.visitingHours}</p>}
                             </div>
                         </header>
 
-                        <section className="pDetails">
-                            <div className="outer-data-box">
+                        {/* Patient Details Section */}
+                        <section className="pDetails modern-section">
+                            <div className="outer-data-box patient-box">
                                 <div className="pdata">
                                     <div className="lCol">
                                         <p><strong>ID:</strong> {patient._id}</p>
@@ -163,25 +171,43 @@ const Preview = () => {
                                         {patient.email && <p><strong>Email:</strong> {patient.email}</p>}
                                         {patient.phone && <p><strong>Phone:</strong> {patient.phone}</p>}
                                         {patient.gender && <p><strong>Gender:</strong> {patient.gender}</p>}
-                                        {patient.dob && <p><strong>DOB:</strong> {new Date(patient.dob).toLocaleDateString()}</p>}
+                                        {patient.dob && <p><strong>DOB:</strong> {formatDate(patient.dob)}</p>}
+                                        {patient.address && <p><strong>Address:</strong> {patient.address}</p>}
                                     </div>
                                     <div className="rightCol">
-                                        <p><strong>Date:</strong> {patient.updatedAt ? new Date(patient.updatedAt).toLocaleDateString() : ''}</p>
+                                        <p><strong>Date:</strong> {formatDate(patient.updatedAt)}</p>
                                         {patient.weight && <p><strong>Weight:</strong> {patient.weight}</p>}
                                         {patient.appointmentId && <p><strong>Appointment:</strong> {patient.appointmentId}</p>}
+                                        {patient.department && <p><strong>Department:</strong> {patient.department}</p>}
+                                        <p><strong>Payment:</strong> {patient.price} ({patient.paymentStatus})</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="mdata outer-data-box">
+                            {/* Prescription Info Section */}
+                            <div className="mdata outer-data-box prescription-box">
                                 {report?.initialComplain && (
                                     <div className='complaints'>
-                                        <h4>Presenting Complaints</h4>
-                                        <p><strong>Initial Complaint:</strong> {report.initialComplain}</p>
-                                        {report.medicalHistory && <p><strong>Medical History:</strong> {report.medicalHistory}</p>}
+                                        <div className="fixed-area-block">
+                                            <strong>Initial Complaint:</strong>
+                                            <div className="fixed-area">{report.initialComplain}</div>
+                                        </div>
+                                        {report.medicalHistory && (
+                                            <div className="fixed-area-block">
+                                                <strong>Medical History:</strong>
+                                                <div className="fixed-area">{report.medicalHistory}</div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
-
+                                <div className='diagnosis-box'>
+                                    <h4>Diagnosis</h4>
+                                    {report?.diagnosys && (
+                                        <ul className="diagnosis-list">
+                                            {Object.entries(report.diagnosys).map(([k, v]) => v && <li key={k}><strong>{k}:</strong> {v}</li>)}
+                                        </ul>
+                                    )}
+                                </div>
                                 <div className='medic-details'>
                                     <div className="medic-header">
                                         <div>Sl</div>
@@ -206,23 +232,40 @@ const Preview = () => {
                                         )}
                                     </div>
                                 </div>
+                                {report?.advice && (
+                                    <div className="advice-box">
+                                        <h4>Doctor's Advice</h4>
+                                        <p>{report.advice}</p>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="auth-box">
+                            {/* Doctor's Notes & Follow-up */}
+                            <div className="auth-box modern-auth-box">
                                 {patient.reportdate && <h4 className='follow-up-date'>Next Follow-up Date: {patient.reportdate}</h4>}
                                 {patient.examinedBy && <h4 className='sign'>Examined By: {patient.examinedBy}</h4>}
                             </div>
                         </section>
 
-                        <footer className="footer">
+                        {/* Edit Button for Doctor/Admin */}
+                        {canEdit && (
+                            <div className="edit-btn-bar">
+                                <button className="edit-btn" onClick={() => setEditMode((v) => !v)}>
+                                    {editMode ? 'Cancel Edit' : 'Edit Prescription'}
+                                </button>
+                                {editMode && <span className="edit-hint">(Fields will be editable here in next step)</span>}
+                            </div>
+                        )}
+
+                        {/* Footer */}
+                        <footer className="footer modern-footer">
                             <p>For any concerns please contact the clinic.</p>
                             {clinic.contact && <p>Contact: {clinic.contact}</p>}
                         </footer>
                     </div>
                 </div>
-
                 <div className='pdf-down-btn' onClick={downLoadPDF}>
-                    Download
+                    Download PDF
                 </div>
             </div>
         </section>
