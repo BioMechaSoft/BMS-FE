@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
 import Login from "./components/Login";
+import Appoinment from "./components/Appointment"
 import AddNewDoctor from "./components/AddNewDoctor";
 import Messages from "./components/Messages";
 import Doctors from "./components/Doctors";
@@ -50,6 +51,11 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/add-appointment" element={
+          <RequireAuth allowedRoles={["Admin","Doctor"]}>
+            <Appoinment />
+          </RequireAuth>
+        } />
         <Route path="/doctor/addnew" element={
           <RequireAuth allowedRoles={["Admin"]}>
             <AddNewDoctor />

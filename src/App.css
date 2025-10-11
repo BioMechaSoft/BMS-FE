@@ -137,12 +137,93 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
   min-height: 10vh;
 }
+@media (max-width:700px) {
+  .middle-banner{
+    flex-direction: column-reverse;
+  }
+}
+.filter-box{
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.custom-dates{
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.custom-dates input{
+  padding: 0.5rem;
+  border: 1px solid gray;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+}
+@media (max-width:900px) {
+  .filter-box{
+    flex-direction: column;
+    align-items: start;
+  }
+  .middle-banner{
+    align-items: start;
+    position: relative;
+  }
+  .search-box{
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+  }
+}
+@media (max-width:630px) {
+  .middle-banner{
+    position: static;
+    align-items: center;
+  }
+  .filter-box{
+    flex-direction: column;
+    align-items: center;
+  }
+  .search-box{
+    position: static;
+  }
+}
+
 
 .filter-box select{
+  background: #FF008D;
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+}
+.filter-box select:focus{
+  border: none;
+}
+.filter-box select option{
+  font-weight: 600;
+  background: #FF008D;
+}
+
+.search-box{
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.search-box input{
   height: 2rem;
-  /* background-color: ; */
+  padding: 0.5rem;
+  border: 1px solid grey;
+  border-radius: 0.3rem;
+}
+.search-box input::placeholder{
+  font-size: 0.7rem;
 }
 
 .table-container {
