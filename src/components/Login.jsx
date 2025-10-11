@@ -20,7 +20,7 @@ const Login = () => {
       const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
       await axios.post(
         `${baseUrl}/api/v1/user/login`,
-        { email, password, confirmPassword, role },
+        { email, password, role },
         { withCredentials: true, headers: { "Content-Type": "application/json" } }
       )
         .then((res) => {
@@ -29,7 +29,7 @@ const Login = () => {
           navigateTo("/");
           setEmail("");
           setPassword("");
-          setConfirmPassword("");
+       //   setConfirmPassword("");
         });
     } catch (error) {
       toast.error(error.response.data.message);
@@ -59,12 +59,12 @@ const Login = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <input
+          {/* <input
             type="password"
             placeholder="Confirm Password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-          />
+          /> */}
           <div style={{ margin: '0.5rem 0' }}>
             <label style={{ marginRight: '1rem' }}>
               <input type="radio" name="role" value="Admin" checked={role === 'Admin'} onChange={() => setRole('Admin')} /> Admin

@@ -1,5 +1,11 @@
 import axios from "axios";
+// Use base URL from environment variables
+const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 import React, { useEffect, useState, useRef } from "react";
+import Modal from "react-modal";
+// @ts-ignore
+import jsPDF from "jspdf";
+import { dobToAge, ageToDob } from "../utils/ageUtils";
 import { toast } from "react-toastify";
 import "./Appointment.css";
 
@@ -19,7 +25,9 @@ const Appointment = () => {
   const [_id, set_id] = useState("");
   const [hasVisited, setHasVisited] = useState(false);
   const [price, setPrice] = useState(0);
+  const [doctorFee, setDoctorFee] = useState(100);
   // const [diagnosys, setDiagnosys] = useState("N/A");
+  const [paymentStatus, setPaymentStatus] = useState("Pending");
   const [BP, setBP] = useState("");
   const [SPO2, setSPO2] = useState("");
   const [diabetes, setDiabetes] = useState("");
@@ -27,6 +35,13 @@ const Appointment = () => {
   const [width, setWidth] = useState("");
   const [others, setOthers] = useState("");
   const [downloadInvoice, setDownloadInvoice] = useState(false);
+  const [showInvoicePreview, setShowInvoicePreview] = useState(false);
+  const [invoiceFields, setInvoiceFields] = useState({
+    address: "",
+    doctorFee: 100,
+    price: 0,
+    paymentStatus: "Pending",
+  });
   const [step, setStep] = useState(1);
   const [doctorSearch, setDoctorSearch] = useState("");
   const [departmentSearch, setDepartmentSearch] = useState("");
@@ -52,7 +67,7 @@ const Appointment = () => {
     const fetchDoctors = async () => {
       try {
         const { data } = await axios.get(
-          "https://pathologylab-backend-new-project.onrender.com/api/v1/user/doctors",
+          `${baseUrl}/api/v1/user/doctors`,
           { withCredentials: true }
         );
         setDoctors(data.doctors || []);
@@ -65,7 +80,7 @@ const Appointment = () => {
     const checkDashboard = async () => {
       try {
         const res = await axios.get(
-          "https://pathologylab-backend-new-project.onrender.com/api/v1/user/dashboard/me",
+          `${baseUrl}/api/v1/user/dashboard/me`,
           { withCredentials: true }
         );
         setDashboardUser(res.data.user);
@@ -127,10 +142,11 @@ const Appointment = () => {
     );
     if (list.length > 0) {
       const first = list[0];
-      set_id(first._id);
-      setDoctorFirstName(first.firstName);
-      setDoctorLastName(first.lastName);
-      setPrice(Math.round((first.consultationFee || 100) * 0.2));
+  set_id(first._id);
+  setDoctorFirstName(first.firstName);
+  setDoctorLastName(first.lastName);
+  setDoctorFee(first.consultationFee || 100);
+  setPrice(Math.round((first.consultationFee || 100) * 0.2));
     } else {
       set_id("");
       setDoctorFirstName("");
@@ -143,9 +159,10 @@ const Appointment = () => {
     if (_id) {
       const d = doctors.find((doc) => doc._id === _id);
       if (d) {
-        setDoctorFirstName(d.firstName);
-        setDoctorLastName(d.lastName);
-        setPrice(Math.round((d.consultationFee || 100) * 0.2));
+  setDoctorFirstName(d.firstName);
+  setDoctorLastName(d.lastName);
+  setDoctorFee(d.consultationFee || 100);
+  setPrice(Math.round((d.consultationFee || 100) * 0.2));
       }
     }
   }, [_id, doctors]);
@@ -170,7 +187,8 @@ const Appointment = () => {
         hasVisited: hasVisitedBool,
         address,
         price,
-        paymentStatus: "Pending",
+  paymentStatus,
+  status: paymentStatus === "Accepted" ? "Accepted" : "Pending",
         // diagnosys,
         BP: BP || undefined,
         SPO2: SPO2 || undefined,
@@ -184,7 +202,7 @@ const Appointment = () => {
         return toast.error(
           "Only Admin/Doctor/Compounder may create appointments. Please login to dashboard."
         );
-      const url = `https://pathologylab-backend-new-project.onrender.com/api/v1/appointment/post${
+      const url = `${baseUrl}/api/v1/appointment/post${
         downloadInvoice ? "?download=true" : ""
       }`;
       const axiosConfig = {
@@ -252,7 +270,7 @@ const Appointment = () => {
     if (!searchNameOrPhone) return toast.error("Enter name or phone to search");
     try {
       const q = encodeURIComponent(searchNameOrPhone);
-      const url = `https://pathologylab-backend-new-project.onrender.com/api/v1/appointment/search?q=${q}`;
+  const url = `${baseUrl}/api/v1/appointment/search?q=${q}`;
       const { data } = await axios.get(url);
       const appt = data.appointments[0];
       if (appt) {
@@ -402,7 +420,7 @@ const Appointment = () => {
                   <input
                     type="number"
                     placeholder="NIC"
-                    value={nic}
+                    value={dobToAge(dob)}
                     onChange={(e) => setNic(e.target.value)}
                   />
                   <select
@@ -421,14 +439,7 @@ const Appointment = () => {
                     value={dob}
                     onChange={(e) => {
                       setDob(e.target.value);
-                      if (e.target.value) {
-                        const diff =
-                          Date.now() - new Date(e.target.value).getTime();
-                        const computed = Math.floor(
-                          diff / (1000 * 60 * 60 * 24 * 365.25)
-                        );
-                        setAge(computed);
-                      }
+                      setAge(dobToAge(e.target.value));
                     }}
                   />
                   <input
@@ -499,6 +510,14 @@ const Appointment = () => {
                             set_id(selectedDoctor._id);
                             setDoctorFirstName(selectedDoctor.firstName);
                             setDoctorLastName(selectedDoctor.lastName);
+                    <style>{`
+                      @media print {
+                        body * { visibility: hidden !important; }
+                        .ReactModal__Content, .ReactModal__Content * { visibility: visible !important; }
+                        .ReactModal__Content { position: absolute !important; left: 0; top: 0; width: 100vw !important; height: auto !important; background: #fff !important; box-shadow: none !important; }
+                      }
+                    `}</style>
+                            setDoctorFee(selectedDoctor.consultationFee || 100);
                             setPrice(
                               Math.round(
                                 (selectedDoctor.consultationFee || 100) * 0.2
@@ -548,7 +567,9 @@ const Appointment = () => {
                     textDecoration: "underline",
                   }}
                 >
-                  Price: {price} Rs
+                  Appointment Fee: {price} Rs<br />
+                  Doctor Fee: {doctorFee} Rs<br />
+                  <b>Total: {price + doctorFee} Rs</b>
                 </div>
                 <div className="diagnosis-grid">
                   <div className="diagnosis-grid-col">
@@ -614,18 +635,19 @@ const Appointment = () => {
                     </div>
                   </div>
                 </div>
-                <div
-                  className="checkbox-container"
-                  style={{ marginTop: "2rem" }}
-                >
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      paddingRight: "1rem",
-                    }}
-                  >
+                <div style={{ marginTop: "2rem" }}>
+                  <label style={{ marginRight: "1rem" }}>
+                    Payment Status:
+                    <select
+                      value={paymentStatus}
+                      onChange={e => setPaymentStatus(e.target.value)}
+                      style={{ marginLeft: "0.5rem" }}
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Accepted">Paid</option>
+                    </select>
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", paddingRight: "1rem" }}>
                     Download invoice after booking
                     <input
                       type="checkbox"
@@ -633,6 +655,15 @@ const Appointment = () => {
                       onChange={(e) => setDownloadInvoice(e.target.checked)}
                     />
                   </label>
+                  <button type="button" style={{marginLeft:'1rem'}} onClick={() => {
+                    setInvoiceFields({
+                      address,
+                      doctorFee,
+                      price,
+                      paymentStatus,
+                    });
+                    setShowInvoicePreview(true);
+                  }}>Preview Invoice</button>
                 </div>
 
                 <div className="btn-container">
@@ -646,6 +677,94 @@ const Appointment = () => {
           </form>
         </div>
       </section>
+      <Modal
+        isOpen={showInvoicePreview}
+        onRequestClose={() => setShowInvoicePreview(false)}
+        contentLabel="Invoice Preview"
+        style={{
+          overlay: { zIndex: 1000, background: "rgba(0,0,0,0.5)" },
+          content: { maxWidth: "600px", margin: "auto", borderRadius: "12px", padding: "2rem" }
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <img src="/logo.png" alt="logo" style={{ width: "80px", borderRadius: "50%" }} />
+          <h2 style={{ margin: 0 }}>Appointment Invoice</h2>
+        </div>
+        <hr />
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "1rem" }}>
+          <div style={{ flex: 1 }}>
+            <h3>Patient Info</h3>
+            <div>Name: {name}</div>
+            <div>Age: {age}</div>
+            <div>
+              Address: <input type="text" value={invoiceFields.address} onChange={e => setInvoiceFields(f => ({ ...f, address: e.target.value }))} style={{ width: "80%" }} />
+            </div>
+          </div>
+          <div style={{ flex: 1, textAlign: "right" }}>
+            <h3>Doctor Info</h3>
+            <div>Name: {doctorFirstName} {doctorLastName}</div>
+            <div>Department: {department}</div>
+          </div>
+        </div>
+        <div style={{ marginTop: "1rem" }}>
+          <div>Appointment Date: {appointmentDate}</div>
+          <div>Valid up to: {
+            (() => {
+              if (!appointmentDate) return "-";
+              const d = new Date(appointmentDate);
+              if (isNaN(d.getTime())) return "-";
+              d.setDate(d.getDate() + 2);
+              return d.toISOString().slice(0, 10);
+            })()
+          }</div>
+        </div>
+        <hr />
+        <div style={{ marginTop: "1rem", fontSize: "1.1rem" }}>
+          <div>Appointment Fee: <input type="number" value={invoiceFields.price} onChange={e => setInvoiceFields(f => ({ ...f, price: Number(e.target.value) }))} style={{ width: "80px" }} /> Rs</div>
+          <div>Doctor Fee: <input type="number" value={invoiceFields.doctorFee} onChange={e => setInvoiceFields(f => ({ ...f, doctorFee: Number(e.target.value) }))} style={{ width: "80px" }} /> Rs</div>
+          <div><b>Total: {Number(invoiceFields.price) + Number(invoiceFields.doctorFee)} Rs</b></div>
+          <div>Paid by: Cash</div>
+          <div>
+            Payment Status:
+            <select value={invoiceFields.paymentStatus} onChange={e => setInvoiceFields(f => ({ ...f, paymentStatus: e.target.value }))} style={{ marginLeft: "0.5rem" }}>
+              <option value="Pending">Pending</option>
+              <option value="Accepted">Paid</option>
+            </select>
+          </div>
+        </div>
+        <div style={{ marginTop: "2rem", textAlign: "right" }}>
+          <button
+            onClick={() => {
+              const doc = new jsPDF();
+              doc.setFontSize(18);
+              doc.text("Appointment Invoice", 20, 20);
+              doc.addImage("/logo.png", "PNG", 160, 10, 30, 30);
+              doc.setFontSize(12);
+              doc.text(`Patient Name: ${name}`, 20, 40);
+              doc.text(`Age: ${dobToAge(dob)}`, 20, 48);
+              doc.text(`Address: ${invoiceFields.address}`, 20, 56);
+              doc.text(`Doctor: ${doctorFirstName} ${doctorLastName}`, 120, 40);
+              doc.text(`Department: ${department}`, 120, 48);
+              doc.text(`Appointment Date: ${appointmentDate}`, 20, 70);
+              doc.text(`Valid up to: ${(() => {
+                if (!appointmentDate) return "-";
+                const d = new Date(appointmentDate);
+                if (isNaN(d.getTime())) return "-";
+                d.setDate(d.getDate() + 2);
+                return d.toISOString().slice(0, 10);
+              })()}`, 20, 78);
+              doc.text(`Appointment Fee: ${invoiceFields.price} Rs`, 20, 90);
+              doc.text(`Doctor Fee: ${invoiceFields.doctorFee} Rs`, 20, 98);
+              doc.text(`Total: ${Number(invoiceFields.price) + Number(invoiceFields.doctorFee)} Rs`, 20, 106);
+              doc.text(`Paid by: Cash`, 20, 114);
+              doc.text(`Payment Status: ${invoiceFields.paymentStatus === "Accepted" ? "Paid" : "Pending"}`, 20, 122);
+              doc.save(`Appointment_Invoice_${name}_${appointmentDate}.pdf`);
+            }}
+            style={{ marginRight: "1rem", padding: "0.5rem 1.5rem", background: "#271776ca", color: "#fff", border: "none", borderRadius: "6px" }}
+          >Download PDF</button>
+          <button onClick={() => setShowInvoicePreview(false)} style={{ padding: "0.5rem 1.5rem", background: "#eee", border: "none", borderRadius: "6px" }}>Close</button>
+        </div>
+      </Modal>
     </>
   );
 };
