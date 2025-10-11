@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import AutoSuggestInput from "./AutoSuggestInput";
+import useSymptomSuggestions from "./useSymptomSuggestions";
 import api from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import "./Prescription.css";
@@ -12,6 +14,7 @@ const Prescription = ({ patientId, onClose }) => {
   const [nic, setNic] = useState("");
   const [bookedBy, setBookedBy] = useState("");
   const [initialComplain, setInitialComplain] = useState("");
+  const symptomSuggestions = useSymptomSuggestions();
   const [medicalHistory, setMedicalHistory] = useState("");
   const [diagnosys, setDiagnosys] = useState({ BP: "", Diabetics: "", SPO2: "", Height: "", Weight: "", Others: "" });
   const [medicineAdvice, setMedicineAdvice] = useState([]);
@@ -338,12 +341,12 @@ const Prescription = ({ patientId, onClose }) => {
       const top = scored.filter(s => s.score > 0).slice(0, 6).map(s => s.a);
       if (!top.length) return;
       const meds = top.map(t => ({
-        name: t.name || "",
-        type: t.type || "",
-        dose: "",
-        frequency: "",
-        route: t.route || "",
-        duration: "",
+        name: t?.name || "",
+        type: t?.type || "",
+        dose: t?.dose||"0",
+        frequency: t?.frequency||"0",
+        route: t?.route || "mouth",
+        duration:t?.duration|| "0",
       }));
       if (force) setMedicineAdvice(meds);
       else setMedicineAdvice(prev => (prev && prev.length ? prev : meds));
@@ -430,7 +433,13 @@ const Prescription = ({ patientId, onClose }) => {
                 <div className={`form-step ${currentStep === 1 ? 'active' : ''}`}>
                   <div className="form-group full-width"><label>Initial Complain</label>
                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                      <input style={{ flex: 1 }} value={initialComplain} onChange={e => setInitialComplain(e.target.value)} />
+                      <AutoSuggestInput
+                        style={{ flex: 1 }}
+                        value={initialComplain}
+                        onChange={e => setInitialComplain(e.target.value)}
+                        suggestions={symptomSuggestions}
+                        placeholder="Type to search symptoms..."
+                      />
                       <button type="button" className="add-btn" onClick={() => autoPopulateFromComplaint(initialComplain, true)} disabled={!initialComplain || initialComplain.trim().length < 2}>{autoPopulating ? 'Populating...' : 'Auto-populate'}</button>
                     </div>
                   </div>

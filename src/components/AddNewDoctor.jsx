@@ -3,6 +3,8 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Context } from "../main";
 import api from "../utils/api";
+import { dobToAge, ageToDob } from '../utils/ageUtils';
+import { makeNIC } from '../utils/nicMaker';
 
 const AddNewDoctor = () => {
   const { isAuthenticated, setIsAuthenticated } = useContext(Context);
@@ -18,6 +20,7 @@ const AddNewDoctor = () => {
   const [doctorDepartment, setDoctorDepartment] = useState("");
   const [docAvatar, setDocAvatar] = useState("");
   const [docAvatarPreview, setDocAvatarPreview] = useState("");
+  const [age, setAge] = useState("");
 
   const navigateTo = useNavigate();
 
@@ -46,14 +49,20 @@ const AddNewDoctor = () => {
   const handleAddNewDoctor = async (e) => {
     e.preventDefault();
     try {
+      // Always recalculate NIC from phone and age
+      const calculatedNic = makeNIC(phone, age);
+      setNic(calculatedNic);
+      // Always recalculate DOB from age
+      const calculatedDob = ageToDob(age);
+      setDob(calculatedDob);
       const formData = new FormData();
       formData.append("firstName", firstName);
       formData.append("lastName", lastName);
       formData.append("email", email);
       formData.append("phone", phone);
       formData.append("password", password);
-      formData.append("nic", nic);
-      formData.append("dob", dob);
+      formData.append("nic", calculatedNic);
+      formData.append("dob", calculatedDob);
       formData.append("gender", gender);
       formData.append("doctorDepartment", doctorDepartment);
       formData.append("docAvatar", docAvatar);
@@ -68,8 +77,9 @@ const AddNewDoctor = () => {
           setLastName("");
           setEmail("");
           setPhone("");
-          setNic("");
-          setDob("");
+          setNic(calculatedNic);
+          setDob(calculatedDob);
+          setAge("");
           setGender("");
           setPassword("");
         });
@@ -116,23 +126,49 @@ const AddNewDoctor = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
+
+              {/* Age and DOB fields, sync both ways. NIC is always readonly and auto-populated. */}
               <input
                 type="number"
                 placeholder="Mobile Number"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={e => {
+                  setPhone(e.target.value);
+                  if (e.target.value && age) setNic(makeNIC(e.target.value, age));
+                }}
               />
               <input
                 type="number"
-                placeholder="NIC"
-                value={nic}
-                onChange={(e) => setNic(e.target.value)}
+                placeholder="Age (years)"
+                value={age}
+                min={0}
+                max={120}
+                onChange={e => {
+                  const val = e.target.value;
+                  setAge(val);
+                  setDob(ageToDob(val));
+                  if (phone && val) setNic(makeNIC(phone, val));
+                }}
               />
               <input
-                type={"date"}
+                type="date"
                 placeholder="Date of Birth"
                 value={dob}
-                onChange={(e) => setDob(e.target.value)}
+                onChange={e => {
+                  setDob(e.target.value);
+                  const newAge = dobToAge(e.target.value);
+                  setAge(newAge);
+                  if (phone && newAge) setNic(makeNIC(phone, newAge));
+                }}
+                readOnly
+                style={{ background: '#f4f4f4', color: '#888' }}
+              />
+              <input
+                type="text"
+                placeholder="NIC (auto)"
+                value={nic}
+                readOnly
+                style={{ background: '#f4f4f4', color: '#888' }}
               />
               <select
                 value={gender}
