@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { FaTrashAlt } from "./RoleIcons";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { toast } from "react-toastify";
@@ -87,8 +88,25 @@ const RoleSettings = () => {
                           {ROLE_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                       </td>
-                      <td style={{ padding: '0.75rem' }}>
+                      <td style={{ padding: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                         <button onClick={() => navigator.clipboard?.writeText(u._id)} style={{ marginRight: '0.5rem' }}>Copy ID</button>
+                        <button
+                          title="Delete User"
+                          style={{ background: 'none', border: 'none', color: '#d32f2f', fontSize: '1.2rem', cursor: 'pointer' }}
+                          onClick={async () => {
+                            if(window.confirm('Are you sure you want to delete this user?')) {
+                              try {
+                                await api.delete(`/api/v1/user/user/${u._id}`);
+                                toast.success('User deleted');
+                                setUsers(users.filter(user => user._id !== u._id));
+                              } catch (err) {
+                                toast.error('Delete failed');
+                              }
+                            }
+                          }}
+                        >
+                          <FaTrashAlt />
+                        </button>
                       </td>
                     </tr>
                   ))}
