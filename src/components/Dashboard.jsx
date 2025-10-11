@@ -121,11 +121,13 @@ const Dashboard = () => {
               <div className="custom-dates">
                 <input
                   type="date"
+                  placeholder="Start date"
                   value={customStart}
                   onChange={(e) => setCustomStart(e.target.value)}
                 />
                 <input
                   type="date"
+                  placeholder="End date"
                   value={customEnd}
                   onChange={(e) => setCustomEnd(e.target.value)}
                 />
@@ -137,7 +139,7 @@ const Dashboard = () => {
             <label>Search</label>
             <input
               type="text"
-              placeholder="Search by name, phone or date"
+              placeholder="Search by name/phone/date"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -159,11 +161,17 @@ const Dashboard = () => {
             <table>
               <thead>
                 <tr>
-                  <th>Patient</th>
-                  <th>Date</th>
+                  <th>Sr. No.</th>
+                  <th>Patient Name</th>
+                  <th>Appointment Date</th>
+                  <th>Created By</th>
+                  <th>Phone</th>
+                  <th>Gender</th>
+                  <th>Payment Mode</th>
+                  <th>Fees Amount</th>
+                  <th>Status</th>
                   <th>Doctor</th>
                   <th>Department</th>
-                  <th>Status</th>
                   <th>Visited</th>
                   <th>Booked By</th>
                   <th>Prescription</th>
@@ -240,12 +248,16 @@ const Dashboard = () => {
                   return filteredAppointments && filteredAppointments.length > 0
                     ? filteredAppointments.map((appointment) => (
                         <tr key={appointment._id}>
+                          <td>{appointments.indexOf(appointment) + 1}</td>
                           <td>{`${appointment.firstName} ${appointment.lastName}`}</td>
                           <td>
                             {appointment.appointment_date.substring(0, 16)}
                           </td>
-                          <td>{`${appointment.doctor.firstName} ${appointment.doctor.lastName}`}</td>
-                          <td>{appointment.department}</td>
+                          <td>{"Umuk"}</td>
+                          <td>{appointment.phone || appointment.mobile}</td>
+                          <td>{appointment.gender}</td>
+                          <td>{appointment.paymentMode || "Cash"}</td>
+                          <td>{appointment.feesAmount || "0"}</td>
                           <td>
                             <select
                               className={
@@ -280,6 +292,8 @@ const Dashboard = () => {
                               </option>
                             </select>
                           </td>
+                          <td>{`${appointment.doctor.firstName} ${appointment.doctor.lastName}`}</td>
+                          <td>{appointment.department}</td>
                           <td>
                             {appointment.hasVisited === true ? (
                               <GoCheckCircleFill className="green" />
