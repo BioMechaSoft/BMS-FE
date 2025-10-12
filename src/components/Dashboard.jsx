@@ -9,6 +9,7 @@ import Prescription from "./Prescription";
 import Modal from "react-modal";
 import { FaTrash } from "react-icons/fa";
 import RequirePermission from "./RequirePermission";
+// import Doctors from "./Doctors";
 
 const Dashboard = () => {
   const [appointments, setAppointments] = useState([]);
@@ -18,6 +19,7 @@ const Dashboard = () => {
   const [customEnd, setCustomEnd] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+  const [Doctors, setDoctors] = useState([]);
   // Modal and prescription state
   const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState(null);
@@ -33,6 +35,23 @@ const Dashboard = () => {
       }
     };
     fetchAppointments();
+  }, []);
+
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        if (searchTerm.trim() === "") {
+          const { data } = await api.get(`/api/v1/user/doctors`);
+          setDoctors(data.doctors);
+        } else {
+          const { data } = await api.get(`/api/v1/user/doctor/search?query=${encodeURIComponent(searchTerm)}`);
+          setDoctors(data.doctors);
+        }
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Failed to fetch doctors");
+      }
+    };
+    fetchDoctors();
   }, []);
 
   // Delete single appointment by ID
@@ -122,9 +141,11 @@ const Dashboard = () => {
                 <h5>{admin && `${admin.firstName} ${admin.lastName}`} </h5>
               </div>
               <p>
-                Lorem ipsum dolor sit, amet consectetur adipisicing elit.
-                Facilis, nam molestias. Eaque molestiae ipsam commodi neque.
-                Assumenda repellendus necessitatibus itaque.
+                Welcome to your dashboard! Here you can manage appointments,
+                view patient information, and oversee your medical practice with
+                ease.
+                If you have any questions or need assistance, feel free to reach out
+                to our support team. <b>Biomechasoft +91 9609436103</b>
               </p>
             </div>
           </div>
@@ -134,7 +155,7 @@ const Dashboard = () => {
           </div>
           <div className="thirdBox">
             <p>Registered Doctors</p>
-            <h3>{10}</h3>
+            <h3>{Doctors.length}</h3>
           </div>
         </div>
 
