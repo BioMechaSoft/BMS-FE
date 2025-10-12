@@ -10,7 +10,7 @@
   font-size: 1rem;
 }
 .suggestion-list {
-  position: absolute;
+  position: auto;
   left: 0;
   right: 0;
   top: 100%;
