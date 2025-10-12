@@ -7,9 +7,12 @@ import { GoCheckCircleFill } from "react-icons/go";
 import { AiFillCloseCircle } from "react-icons/ai";
 import Prescription from "./Prescription";
 import Modal from "react-modal";
+import { FaTrash } from "react-icons/fa";
+import RequirePermission from "./RequirePermission";
 
 const Dashboard = () => {
   const [appointments, setAppointments] = useState([]);
+  const [selectedAppointments, setSelectedAppointments] = useState([]);
   const [filterOption, setFilterOption] = useState("All");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
@@ -31,6 +34,38 @@ const Dashboard = () => {
     };
     fetchAppointments();
   }, []);
+
+  // Delete single appointment by ID
+  const handleDeleteAppointment = async (id) => {
+    if (!window.confirm("Delete this appointment?")) return;
+    try {
+      await api.delete(`/api/v1/appointment/delete/${id}`);
+      setAppointments(prev => prev.filter(a => a._id !== id));
+      setSelectedAppointments(prev => prev.filter(x => x !== id));
+      toast.success("Appointment deleted");
+    } catch (err) {
+      toast.error("Delete failed");
+    }
+  };
+
+  // Bulk delete selected appointments
+  const handleBulkDelete = async () => {
+    if (selectedAppointments.length === 0) return toast.info("No appointments selected");
+    if (!window.confirm(`Delete ${selectedAppointments.length} appointments?`)) return;
+    try {
+      await api.post(`/api/v1/appointment/bulk-delete`, { ids: selectedAppointments });
+      setAppointments(prev => prev.filter(a => !selectedAppointments.includes(a._id)));
+      setSelectedAppointments([]);
+      toast.success("Bulk delete complete");
+    } catch (err) {
+      toast.error("Bulk delete failed");
+    }
+  };
+
+  // Toggle select for bulk delete
+  const toggleSelectAppointment = (id) => {
+    setSelectedAppointments(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
 
   const handleUpdateStatus = async (appointmentId, status) => {
     try {
@@ -155,12 +190,113 @@ const Dashboard = () => {
             >
               Add new
             </button>
+            <RequirePermission allowedRoles={["Admin"]}>
+              <button
+                className="btn remove-btn"
+                onClick={handleBulkDelete}
+                disabled={selectedAppointments.length === 0}
+                style={{marginLeft:'1rem'}}
+              >
+                Delete Selected ({selectedAppointments.length})
+              </button>
+            </RequirePermission>
           </div>
 
           <div className="table-container">
             <table>
               <thead>
                 <tr>
+                    <th>
+                      <input
+                        type="checkbox"
+                        checked={(() => {
+                          const filteredAppointments = (appointments || []).filter(
+                            (appointment) => {
+                              try {
+                                const apptDate = new Date(appointment.appointment_date);
+                                const today = new Date();
+                                const startOfToday = new Date(
+                                  today.getFullYear(),
+                                  today.getMonth(),
+                                  today.getDate()
+                                );
+                                if (filterOption === "Today") {
+                                  const apptYmd = apptDate.toISOString().slice(0, 10);
+                                  const todayYmd = startOfToday.toISOString().slice(0, 10);
+                                  if (apptYmd !== todayYmd) return false;
+                                } else if (filterOption === "Old") {
+                                  if (apptDate >= startOfToday) return false;
+                                } else if (filterOption === "Upcoming") {
+                                  if (apptDate <= startOfToday) return false;
+                                } else if (filterOption === "Custom") {
+                                  if (customStart && customEnd) {
+                                    const start = new Date(customStart + "T00:00:00");
+                                    const end = new Date(customEnd + "T23:59:59");
+                                    if (apptDate < start || apptDate > end) return false;
+                                  }
+                                }
+                                if (searchTerm && searchTerm.trim() !== "") {
+                                  const q = searchTerm.toLowerCase();
+                                  const name = `${appointment.firstName || ""} ${appointment.lastName || ""}`.toLowerCase();
+                                  const phone = (appointment.phone || appointment.mobile || appointment.patientPhone || "").toString().toLowerCase();
+                                  const dateStr = (appointment.appointment_date || "").toString().toLowerCase();
+                                  if (!name.includes(q) && !phone.includes(q) && !dateStr.includes(q)) {
+                                    return false;
+                                  }
+                                }
+                                return true;
+                              } catch (err) {
+                                return true;
+                              }
+                            }
+                          );
+                          return filteredAppointments.length > 0 && selectedAppointments.length === filteredAppointments.length;
+                        })()}
+                        onChange={e => {
+                          const filteredAppointments = (appointments || []).filter(
+                            (appointment) => {
+                              try {
+                                const apptDate = new Date(appointment.appointment_date);
+                                const today = new Date();
+                                const startOfToday = new Date(
+                                  today.getFullYear(),
+                                  today.getMonth(),
+                                  today.getDate()
+                                );
+                                if (filterOption === "Today") {
+                                  const apptYmd = apptDate.toISOString().slice(0, 10);
+                                  const todayYmd = startOfToday.toISOString().slice(0, 10);
+                                  if (apptYmd !== todayYmd) return false;
+                                } else if (filterOption === "Old") {
+                                  if (apptDate >= startOfToday) return false;
+                                } else if (filterOption === "Upcoming") {
+                                  if (apptDate <= startOfToday) return false;
+                                } else if (filterOption === "Custom") {
+                                  if (customStart && customEnd) {
+                                    const start = new Date(customStart + "T00:00:00");
+                                    const end = new Date(customEnd + "T23:59:59");
+                                    if (apptDate < start || apptDate > end) return false;
+                                  }
+                                }
+                                if (searchTerm && searchTerm.trim() !== "") {
+                                  const q = searchTerm.toLowerCase();
+                                  const name = `${appointment.firstName || ""} ${appointment.lastName || ""}`.toLowerCase();
+                                  const phone = (appointment.phone || appointment.mobile || appointment.patientPhone || "").toString().toLowerCase();
+                                  const dateStr = (appointment.appointment_date || "").toString().toLowerCase();
+                                  if (!name.includes(q) && !phone.includes(q) && !dateStr.includes(q)) {
+                                    return false;
+                                  }
+                                }
+                                return true;
+                              } catch (err) {
+                                return true;
+                              }
+                            }
+                          );
+                          setSelectedAppointments(e.target.checked ? filteredAppointments.map(a => a._id) : []);
+                        }}
+                      />
+                    </th>
                   <th>Sr. No.</th>
                   <th>Patient Name</th>
                   <th>Appointment Date</th>
@@ -175,6 +311,7 @@ const Dashboard = () => {
                   <th>Visited</th>
                   <th>Booked By</th>
                   <th>Prescription</th>
+                    <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -248,12 +385,19 @@ const Dashboard = () => {
                   return filteredAppointments && filteredAppointments.length > 0
                     ? filteredAppointments.map((appointment) => (
                         <tr key={appointment._id}>
+                            <td>
+                              <input
+                                type="checkbox"
+                                checked={selectedAppointments.includes(appointment._id)}
+                                onChange={() => toggleSelectAppointment(appointment._id)}
+                              />
+                            </td>
                           <td>{appointments.indexOf(appointment) + 1}</td>
-                          <td>{`${appointment.firstName} ${appointment.lastName}`}</td>
+                          <td>{appointment.name||`${appointment.firstName} ${appointment.lastName}`}</td>
                           <td>
                             {appointment.appointment_date.substring(0, 16)}
                           </td>
-                          <td>{"Umuk"}</td>
+                          <td>{appointment.bookedBy||"You"}</td>
                           <td>{appointment.phone || appointment.mobile}</td>
                           <td>{appointment.gender}</td>
                           <td>{appointment.paymentMode || "Cash"}</td>
@@ -316,6 +460,17 @@ const Dashboard = () => {
                               Prescription
                             </button>
                           </td>
+                            <td>
+                              <RequirePermission allowedRoles={["Admin"]}>
+                              <button
+                                className="btn remove-btn"
+                                onClick={() => handleDeleteAppointment(appointment._id)}
+                                style={{background:'none',border:'none',color:'#b10c0c'}}
+                              >
+                                <FaTrash />
+                              </button>
+                              </RequirePermission>
+                            </td>
                         </tr>
                       ))
                     : "No Appointments Found!";

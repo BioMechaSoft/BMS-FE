@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { Context } from "../main";
 import { Navigate } from "react-router-dom";
 import { FaSearch, FaTrashAlt, FaEdit, FaEye } from "./DoctorIcons";
+import RequirePermission from "./RequirePermission";
 
 const Doctors = () => {
   const [doctors, setDoctors] = useState([]);
@@ -86,6 +87,7 @@ const Doctors = () => {
                     <div><span style={{ fontWeight: 600 }}>Phone:</span> {element.phone}</div>
                     <div><span style={{ fontWeight: 600 }}>DOB:</span> {element.dob.substring(0, 10)}</div>
                   </div>
+                  <RequirePermission allowedRoles={["Admin"]}>
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
                     <button title="View" onClick={() => setSelectedDoctor(element)} style={{ background: '#f7f7fa', border: 'none', color: '#271776', fontSize: '1.2rem', borderRadius: '8px', padding: '0.5rem 0.7rem', boxShadow: '0 1px 4px #eee', cursor: 'pointer' }}><FaEye /></button>
                     <button title="Edit" onClick={() => {
@@ -122,6 +124,7 @@ const Doctors = () => {
                       }
                     }} style={{ background: '#fff0f0', border: 'none', color: '#d32f2f', fontSize: '1.2rem', borderRadius: '8px', padding: '0.5rem 0.7rem', boxShadow: '0 1px 4px #eee', cursor: 'pointer' }}><FaTrashAlt /></button>
                   </div>
+                  </RequirePermission>
                 </div>
               );
             })

@@ -6,6 +6,7 @@ import Modal from "react-modal";
 // @ts-ignore
 import jsPDF from "jspdf";
 import { dobToAge, ageToDob } from "../utils/ageUtils";
+import{makeNIC} from '../utils/nicMaker.js';
 import { toast } from "react-toastify";
 import "./Appointment.css";
 
@@ -123,12 +124,12 @@ const Appointment = () => {
   }, []);
 
   // auto-generate NIC if missing when phone changes
-  useEffect(() => {
-    if (!nic && phone) {
-      const base = (phone + Date.now().toString()).replace(/\D/g, "");
-      setNic(base.slice(0, 13).padEnd(13, "0"));
-    }
-  }, [phone]);
+  // useEffect(() => {
+  //   if (!nic && phone) {
+  //     const base = (phone + Date.now().toString()).replace(/\D/g, "");
+  //     setNic(base.slice(0, 13).padEnd(13, "0"));
+  //   }
+  // }, [phone]);
 
   // when department or doctorSearch changes, auto-select first doctor
   useEffect(() => {
@@ -170,9 +171,27 @@ const Appointment = () => {
   const handleAppointment = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     try {
+        // Name parsing logic
+        let firstName = "";
+        let lastName = "";
+        if (name && name.trim()) {
+          const parts = name.trim().split(/\s+/);
+          if (parts.length === 1) {
+            firstName = parts[0];
+            lastName = "";
+          } else if (parts.length === 2) {
+            firstName = parts[0];
+            lastName = parts[1];
+          } else if (parts.length > 2) {
+            firstName = parts[0];
+            lastName = parts.slice(1).join(" ");
+          }
+        }
       const hasVisitedBool = Boolean(hasVisited);
       const payload = {
-        name,
+          firstName:firstName,
+          lastName:lastName||"Not Confirmed",
+          name,
         email: email || undefined,
         phone,
         nic: nic || undefined,
@@ -418,9 +437,10 @@ const Appointment = () => {
               <div>
                 <div className="lnr-input-box">
                   <input
+                  readOnly
                     type="number"
                     placeholder="NIC"
-                    value={dobToAge(dob)}
+                    value={makeNIC(dob, phone)}
                     onChange={(e) => setNic(e.target.value)}
                   />
                   <select
