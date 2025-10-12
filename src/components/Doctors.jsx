@@ -13,26 +13,27 @@ const Doctors = () => {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateFields, setUpdateFields] = useState({});
   const { isAuthenticated } = useContext(Context);
+
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const { data } = await api.get(`/api/v1/user/doctors`);
-        setDoctors(data.doctors);
+        if (searchTerm.trim() === "") {
+          const { data } = await api.get(`/api/v1/user/doctors`);
+          setDoctors(data.doctors);
+        } else {
+          const { data } = await api.get(`/api/v1/user/doctor/search?query=${encodeURIComponent(searchTerm)}`);
+          setDoctors(data.doctors);
+        }
       } catch (error) {
-        toast.error(error.response.data.message);
+        toast.error(error.response?.data?.message || "Failed to fetch doctors");
       }
     };
     fetchDoctors();
-  }, []);
+  }, [searchTerm]);
 
-  const handleSearch = async (e) => {
+  const handleSearch = (e) => {
     e.preventDefault();
-    try {
-      const { data } = await api.get(`/api/v1/user/doctor/search?q=${encodeURIComponent(searchTerm)}`);
-      setDoctors(data.doctors);
-    } catch (error) {
-      toast.error("Search failed");
-    }
+    // No need to manually fetch, searchTerm change triggers useEffect
   };
 
   if (!isAuthenticated) {
@@ -45,7 +46,7 @@ const Doctors = () => {
         <form onSubmit={handleSearch} style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem', gap: '0.5rem' }}>
           <input
             type="text"
-            placeholder="Search by name, ID, NIC, or email"
+            placeholder="Search by name, phone, department, NIC..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc', width: '250px' }}
@@ -58,67 +59,68 @@ const Doctors = () => {
           {doctors && doctors.length > 0 ? (
             doctors.map((element) => {
               return (
-                <div class="doc-card" key={element._id}>
-                  <div class="doc-card__inner">
-                    <div class="doc-card__avatar">
-                      <img src={element.docAvatar && element.docAvatar.url?element.docAvatar && element.docAvatar.url:'./doc1.jpg'}
-                      alt="doctor avatar" />
-                    </div>
-
-                    <h3 class="doc-card__name">{`${element.firstName} ${element.lastName}`}</h3>
-                    <p class="doc-card__role">NIC: {element.nic}</p>
-
-                    <div class="doc-card__info">
-                      <p>
-                        <span class="label">Email:</span> {element.email}
-                      </p>
-                      <p>
-                        <span class="label">Phone:</span> {element.phone}
-                      </p>
-                      <p>
-                        <span class="label">DOB:</span> {element.dob.substring(0, 10)}
-                      </p>
-                    </div>
-
-                    <div class="doc-card__actions">
-                      <div class="doc-btn btn--primary">{element.doctorDepartment}</div>
-                      <div class="doc-btn btn--ghost">{element.gender}</div>
-                      <button class="doc-btn btn--view" title="View" onClick={() => setSelectedDoctor(element)} style={{ background: 'none', border: 'none', color: '#271776ca', fontSize: '1.2rem', marginRight: '0.5rem' }}><FaEye /></button>
-                      <button class="doc-btn btn--update" title="Edit" onClick={() => {
-                        setSelectedDoctor(element);
-                        setUpdateFields({
-                          firstName: element.firstName,
-                          lastName: element.lastName,
-                          email: element.email,
-                          phone: element.phone,
-                          nic: element.nic,
-                          dob: element.dob ? element.dob.substring(0,10) : '',
-                          gender: element.gender,
-                          doctorDepartment: element.doctorDepartment,
-                          consultationFee: element.consultationFee || 100
-                        });
-                        setShowUpdateModal(true);
-                      }} style={{ background: 'none', border: 'none', color: '#271776ca', fontSize: '1.2rem', marginRight: '0.5rem' }}><FaEdit /></button>
-                      <button class="doc-btn btn--delete" title="Delete" onClick={async () => {
-                        if(window.confirm('Are you sure you want to delete this doctor?')) {
-                          try {
-                            await api.delete(`/api/v1/user/doctor/${element._id}`);
-                            toast.success('Doctor deleted');
-                            setDoctors(doctors.filter(d => d._id !== element._id));
-                            // Send message to Sohel.Islam@gmail.com
-                            await api.post('/api/v1/message/send', {
-                              firstName: element.firstName,
-                              lastName: element.lastName,
-                              email: 'Sohel.Islam@gmail.com',
-                              phone: element.phone,
-                              message: `Doctor ${element.firstName} ${element.lastName} deleted.`
-                            });
-                          } catch (err) {
-                            toast.error('Delete failed');
-                          }
+                <div class="doc-card pro-card" key={element._id} style={{
+                  boxShadow: '0 4px 24px rgba(39,23,118,0.12)',
+                  borderRadius: '18px',
+                  background: '#fff',
+                  margin: '1rem',
+                  padding: '1.5rem',
+                  maxWidth: '340px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  transition: 'box-shadow 0.2s',
+                  border: '1px solid #ececec',
+                  position: 'relative'
+                }}>
+                  <div style={{ width: 90, height: 90, borderRadius: '50%', overflow: 'hidden', boxShadow: '0 2px 8px #eee', marginBottom: '1rem', background: '#f7f7fa' }}>
+                    <img src={element.docAvatar && element.docAvatar.url ? element.docAvatar.url : './doc1.jpg'} alt="doctor avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <h3 style={{ fontWeight: 700, fontSize: '1.25rem', margin: '0.5rem 0', color: '#271776' }}>{`${element.firstName} ${element.lastName}`}</h3>
+                  <div style={{ fontSize: '0.95rem', color: '#555', marginBottom: '0.5rem' }}>NIC: <span style={{ fontWeight: 500 }}>{element.nic}</span></div>
+                  <div style={{ fontSize: '0.95rem', color: '#555', marginBottom: '0.5rem' }}>Department: <span style={{ fontWeight: 500 }}>{element.doctorDepartment}</span></div>
+                  <div style={{ fontSize: '0.95rem', color: '#555', marginBottom: '0.5rem' }}>Gender: <span style={{ fontWeight: 500 }}>{element.gender}</span></div>
+                  <div style={{ width: '100%', margin: '0.5rem 0', borderTop: '1px solid #ececec' }}></div>
+                  <div style={{ width: '100%', textAlign: 'left', fontSize: '0.92rem', color: '#444', marginBottom: '0.5rem' }}>
+                    <div><span style={{ fontWeight: 600 }}>Email:</span> {element.email}</div>
+                    <div><span style={{ fontWeight: 600 }}>Phone:</span> {element.phone}</div>
+                    <div><span style={{ fontWeight: 600 }}>DOB:</span> {element.dob.substring(0, 10)}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                    <button title="View" onClick={() => setSelectedDoctor(element)} style={{ background: '#f7f7fa', border: 'none', color: '#271776', fontSize: '1.2rem', borderRadius: '8px', padding: '0.5rem 0.7rem', boxShadow: '0 1px 4px #eee', cursor: 'pointer' }}><FaEye /></button>
+                    <button title="Edit" onClick={() => {
+                      setSelectedDoctor(element);
+                      setUpdateFields({
+                        firstName: element.firstName,
+                        lastName: element.lastName,
+                        email: element.email,
+                        phone: element.phone,
+                        nic: element.nic,
+                        dob: element.dob ? element.dob.substring(0,10) : '',
+                        gender: element.gender,
+                        doctorDepartment: element.doctorDepartment,
+                        consultationFee: element.consultationFee || 100
+                      });
+                      setShowUpdateModal(true);
+                    }} style={{ background: '#f7f7fa', border: 'none', color: '#271776', fontSize: '1.2rem', borderRadius: '8px', padding: '0.5rem 0.7rem', boxShadow: '0 1px 4px #eee', cursor: 'pointer' }}><FaEdit /></button>
+                    <button title="Delete" onClick={async () => {
+                      if(window.confirm('Are you sure you want to delete this doctor?')) {
+                        try {
+                          await api.delete(`/api/v1/user/user/${element._id}`);
+                          toast.success('Doctor deleted');
+                          setDoctors(doctors.filter(d => d._id !== element._id));
+                          await api.post('/api/v1/message/send', {
+                            firstName: element.firstName,
+                            lastName: element.lastName,
+                            email: 'Sohel.Islam@gmail.com',
+                            phone: element.phone,
+                            message: `Doctor ${element.firstName} ${element.lastName} deleted.`
+                          });
+                        } catch (err) {
+                          toast.error('Delete failed');
                         }
-                      }} style={{ background: 'none', border: 'none', color: '#d32f2f', fontSize: '1.2rem' }}><FaTrashAlt /></button>
-                    </div>
+                      }
+                    }} style={{ background: '#fff0f0', border: 'none', color: '#d32f2f', fontSize: '1.2rem', borderRadius: '8px', padding: '0.5rem 0.7rem', boxShadow: '0 1px 4px #eee', cursor: 'pointer' }}><FaTrashAlt /></button>
                   </div>
                 </div>
               );
