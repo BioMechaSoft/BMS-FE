@@ -1,8 +1,9 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from 'react-redux';
 import { toast } from "react-toastify";
 import { Context } from "../main";
-import axios from "axios";
+import { loginRequest } from "../store/authSlice";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -11,32 +12,28 @@ const Login = () => {
   const [role, setRole] = useState("Admin");
 
   const { isAuthenticated, setIsAuthenticated } = useContext(Context);
+  const dispatch = useDispatch();
+  const auth = useSelector(state => state.auth);
 
   const navigateTo = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    try {
-      const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
-      await axios.post(
-        `${baseUrl}/api/v1/user/login`,
-        { email, password, role },
-        { withCredentials: true, headers: { "Content-Type": "application/json" } }
-      )
-        .then((res) => {
-          toast.success(res.data.message);
-          setIsAuthenticated(true);
-          navigateTo("/");
-          setEmail("");
-          setPassword("");
-       //   setConfirmPassword("");
-        });
-    } catch (error) {
-      toast.error(error.response.data.message);
-    }
+    // dispatch redux login
+    dispatch(loginRequest({ email, password, role }));
   };
 
-  if (isAuthenticated) {
+  useEffect(() => {
+    if (auth.isAuthenticated) {
+      setIsAuthenticated(true);
+      navigateTo('/');
+    }
+    if (auth.error) {
+      toast.error(auth.error);
+    }
+  }, [auth.isAuthenticated, auth.error]);
+
+  if (isAuthenticated || auth.isAuthenticated) {
     return <Navigate to={"/"} />;
   }
 

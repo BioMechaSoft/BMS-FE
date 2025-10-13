@@ -6,6 +6,8 @@ import { Context } from "../main";
 import { Navigate } from "react-router-dom";
 import { FaSearch, FaTrashAlt, FaEdit, FaEye } from "./DoctorIcons";
 import RequirePermission from "./RequirePermission";
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchDoctorsRequest } from '../store/doctorsSlice';
 
 const Doctors = () => {
   const [doctors, setDoctors] = useState([]);
@@ -14,23 +16,24 @@ const Doctors = () => {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateFields, setUpdateFields] = useState({});
   const { isAuthenticated } = useContext(Context);
+  const dispatch = useDispatch();
+  const storeDoctors = useSelector(s => s.doctors.doctors || []);
+  const doctorsLoading = useSelector(s => s.doctors.loading);
 
   useEffect(() => {
-    const fetchDoctors = async () => {
-      try {
-        if (searchTerm.trim() === "") {
-          const { data } = await api.get(`/api/v1/user/doctors`);
-          setDoctors(data.doctors);
-        } else {
-          const { data } = await api.get(`/api/v1/user/doctor/search?query=${encodeURIComponent(searchTerm)}`);
-          setDoctors(data.doctors);
-        }
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to fetch doctors");
-      }
-    };
-    fetchDoctors();
+    // fetch on mount
+    dispatch(fetchDoctorsRequest({ query: '' }));
+  }, []);
+
+  useEffect(() => {
+    // dispatch search request; saga debounces
+    dispatch(fetchDoctorsRequest({ query: searchTerm }));
   }, [searchTerm]);
+
+  // sync local doctors state from store to allow local filtering after fetch
+  useEffect(() => {
+    setDoctors(storeDoctors);
+  }, [storeDoctors]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -110,7 +113,8 @@ const Doctors = () => {
                         try {
                           await api.delete(`/api/v1/user/user/${element._id}`);
                           toast.success('Doctor deleted');
-                          setDoctors(doctors.filter(d => d._id !== element._id));
+                          // refresh doctors list from server
+                          dispatch(fetchDoctorsRequest({ query: searchTerm }));
                           await api.post('/api/v1/message/send', {
                             firstName: element.firstName,
                             lastName: element.lastName,

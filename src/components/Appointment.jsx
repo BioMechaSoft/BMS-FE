@@ -1,7 +1,6 @@
-import axios from "axios";
-// Use base URL from environment variables
-const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 import React, { useEffect, useState, useRef } from "react";
+import { useDispatch, useSelector } from 'react-redux';
+import api from '../utils/api';
 import Modal from "react-modal";
 // @ts-ignore
 import jsPDF from "jspdf";
@@ -65,13 +64,12 @@ const Appointment = () => {
   const [doctors, setDoctors] = useState([]);
   const [dashboardUser, setDashboardUser] = useState(null);
   const [canBook, setCanBook] = useState(false);
+  const dispatch = useDispatch();
+  const appointmentState = useSelector(s => s.appointment);
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const { data } = await axios.get(
-          `${baseUrl}/api/v1/user/doctors`,
-          { withCredentials: true }
-        );
+        const { data } = await api.get(`/api/v1/user/doctors`);
         setDoctors(data.doctors || []);
       } catch (err) {
         console.error("Failed to fetch doctors", err);
@@ -81,14 +79,9 @@ const Appointment = () => {
     // check dashboard session
     const checkDashboard = async () => {
       try {
-        const res = await axios.get(
-          `${baseUrl}/api/v1/user/dashboard/me`,
-          { withCredentials: true }
-        );
-        setDashboardUser(res.data.user);
-        setCanBook(
-          ["Admin", "Doctor", "Compounder"].includes(res.data.user.role)
-        );
+        const { data: res } = await api.get(`/api/v1/user/dashboard/me`);
+        setDashboardUser(res.user);
+        setCanBook(["Admin", "Doctor", "Compounder"].includes(res.user.role));
       } catch (e) {
         setDashboardUser(null);
         setCanBook(false);
@@ -337,36 +330,23 @@ const Appointment = () => {
         return toast.error(
           "Only Admin/Doctor/Compounder may create appointments. Please login to dashboard."
         );
-      const url = `${baseUrl}/api/v1/appointment/post${
-        downloadInvoice ? "?download=true" : ""
-      }`;
-      const axiosConfig = {
-        withCredentials: true,
-        headers: { "Content-Type": "application/json" },
-      };
-      if (downloadInvoice) axiosConfig.responseType = "blob";
-      const response = await axios.post(url, payload, axiosConfig);
-      let data = response.data;
-      if (downloadInvoice && response.data) {
-        const blob = new Blob([response.data], {
-          type: response.headers["content-type"] || "text/html",
-        });
-        const link = document.createElement("a");
-        const filename = response.headers["content-disposition"]
-          ? response.headers["content-disposition"].split("filename=")[1]
-          : `appointment-invoice.html`;
-        link.href = window.URL.createObjectURL(blob);
-        link.download = filename.replace(/\"/g, "");
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        toast.success("Appointment created and invoice downloaded");
-      } else {
-        data = response.data;
-        toast.success(data.message);
-      }
+      // dispatch redux action to create appointment (saga handles download)
+      dispatch({ type: 'appointment/createAppointmentRequest', payload: { payload, download: downloadInvoice } });
 
-      // Reset form fields after successful submission
+      // Let saga handle success. Saga will toast. We listen to appointmentState below to reset.
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : "An error occurred. Please try again."
+      );
+    }
+  };
+
+  // reset form on successful appointment creation
+  useEffect(() => {
+    if (appointmentState && appointmentState.lastCreated) {
       setName("");
       setEmail("");
       setPhone("");
@@ -382,7 +362,6 @@ const Appointment = () => {
       setAddress("");
       set_id("");
       setPrice(0);
-      // setDiagnosys("N/A");
       setBP("");
       setSPO2("");
       setDiabetes("");
@@ -391,15 +370,8 @@ const Appointment = () => {
       setOthers("");
       setDownloadInvoice(false);
       setStep(1);
-    } catch (error) {
-      console.error(error);
-      toast.error(
-        error.response && error.response.data.message
-          ? error.response.data.message
-          : "An error occurred. Please try again."
-      );
     }
-  };
+  }, [appointmentState.lastCreated]);
 
   const handlePrefillFromVisited = async () => {
     if (!searchNameOrPhone) return toast.error("Enter name or phone to search");

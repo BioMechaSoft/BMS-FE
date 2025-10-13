@@ -1,6 +1,8 @@
 import React, { createContext, useState } from "react";
 import ReactDOM from "react-dom/client";
+import { Provider } from 'react-redux';
 import App from "./App.jsx";
+import store from './store';
 
 // Apply saved theme on initial load
 const savedTheme = localStorage.getItem("dashboard-theme");
@@ -15,11 +17,13 @@ const AppWrapper = () => {
   const [admin, setAdmin] = useState({});
 
   return (
-    <Context.Provider
-      value={{ isAuthenticated, setIsAuthenticated, admin, setAdmin }}
-    >
-      <App />
-    </Context.Provider>
+    <Provider store={store}>
+      <Context.Provider
+        value={{ isAuthenticated, setIsAuthenticated, admin, setAdmin }}
+      >
+        <App />
+      </Context.Provider>
+    </Provider>
   );
 };
 

@@ -3,32 +3,23 @@ import React, { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { Context } from "../main";
 import { Navigate } from "react-router-dom";
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchMessagesRequest } from '../store/messagesSlice';
 
 const Messages = () => {
-  const [messages, setMessages] = useState([]);
   const [selected, setSelected] = useState([]);
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [counts, setCounts] = useState({ total: 0, read: 0, unread: 0 });
+  const dispatch = useDispatch();
+  const messagesState = useSelector(s => s.messages);
+  const messages = messagesState.messages || [];
+  const totalPages = messagesState.totalPages || 1;
+  const counts = messagesState.counts || { total:0, read:0, unread:0 };
   const { isAuthenticated } = useContext(Context);
 
-  const fetchMessages = async (search = '', p = 1) => {
-    try {
-      const params = { limit: 10, page: p };
-      if (search) params.q = search;
-      const { data } = await api.get(`/api/v1/message/getall`, { params });
-      setMessages(data.messages || []);
-      setCounts({ total: data.total || 0, read: data.readCount || 0, unread: data.unreadCount || 0 });
-      setPage(data.page || 1);
-      setTotalPages(data.totalPages || 1);
-    } catch (error) {
-      console.error(error?.response?.data || error.message);
-      toast.error('Failed to load messages');
-    }
-  };
-
-  useEffect(() => { fetchMessages('', page); }, []);
+  useEffect(() => {
+    dispatch(fetchMessagesRequest({ q: '', page }));
+  }, []);
 
   if (!isAuthenticated) {
     return <Navigate to={"/login"} />;
@@ -40,17 +31,17 @@ const Messages = () => {
 
   const markAsRead = async (id, val = true) => {
     try {
-  await api.put(`/api/v1/message/${id}`, { read: val });
-      fetchMessages(q);
+      await api.put(`/api/v1/message/${id}`, { read: val });
+      dispatch(fetchMessagesRequest({ q, page }));
     } catch (err) { toast.error('Failed to update'); }
   };
 
   const deleteOne = async (id) => {
     if (!confirm('Delete this message?')) return;
     try {
-  await api.delete(`/api/v1/message/${id}`);
+      await api.delete(`/api/v1/message/${id}`);
       toast.success('Deleted');
-      fetchMessages(q);
+      dispatch(fetchMessagesRequest({ q, page }));
     } catch (err) { toast.error('Delete failed'); }
   };
 
@@ -58,21 +49,22 @@ const Messages = () => {
     if (selected.length === 0) return toast.info('No messages selected');
     if (!confirm(`Delete ${selected.length} messages?`)) return;
     try {
-  await api.post(`/api/v1/message/bulk-delete`, { ids: selected });
+      await api.post(`/api/v1/message/bulk-delete`, { ids: selected });
       toast.success('Bulk delete complete');
       setSelected([]);
-      fetchMessages(q, page);
+      dispatch(fetchMessagesRequest({ q, page }));
     } catch (err) { toast.error('Bulk delete failed'); }
   };
 
   const doSearch = async () => {
-    await fetchMessages(q, 1);
+    setPage(1);
+    dispatch(fetchMessagesRequest({ q, page: 1 }));
   };
 
   const goToPage = (p) => {
     if (p < 1 || p > totalPages) return;
     setPage(p);
-    fetchMessages(q, p);
+    dispatch(fetchMessagesRequest({ q, page: p }));
   };
 
   return (
