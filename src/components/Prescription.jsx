@@ -3,6 +3,7 @@ import AutoSuggestInput from "./AutoSuggestInput";
 import useSymptomSuggestions from "./useSymptomSuggestions";
 import api from "../utils/api";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import "./Prescription.css";
 
 // Clean, single-component Prescription (5-step slider)
@@ -19,7 +20,30 @@ const Prescription = ({ patientId, onClose }) => {
   const [diagnosys, setDiagnosys] = useState({ BP: "", Diabetics: "", SPO2: "", Height: "", Weight: "", Others: "" });
   const [medicineAdvice, setMedicineAdvice] = useState([]);
   const [autoPopulating, setAutoPopulating] = useState(false);
-  const [advice, setAdvice] = useState("");
+  const [selectedTestTypes, setSelectedTestTypes] = useState([]);
+  const [testAdviceRows, setTestAdviceRows] = useState([{ testName: "", testType: "", precautions: "", testDate: "" }]);
+  const [medicationAdvice, setMedicationAdvice] = useState("");
+  const [dietAdvice, setDietAdvice] = useState("");
+  const [originalPayload, setOriginalPayload] = useState(null);
+  const [isDirty, setIsDirty] = useState(false);
+  // Checkbox toggle for advice types
+  const handleCheckboxToggle = (e, testType) => {
+    setSelectedTestTypes(prev =>
+      e.target.checked
+        ? [...prev, testType]
+        : prev.filter(t => t !== testType)
+    );
+  };
+
+  // Add new test advice row
+  const addNewTestAdviceRow = () => {
+    setTestAdviceRows(prev => [...prev, { testName: "", testType: "", precautions: "", testDate: "" }]);
+  };
+
+  // Update test advice row
+  const handleTestAdviceChange = (idx, field, value) => {
+    setTestAdviceRows(prev => prev.map((row, i) => (i === idx ? { ...row, [field]: value } : row)));
+  };
   const [doctorId, setDoctorId] = useState("");
   const [doctorContact, setDoctorContact] = useState("");
   const [doctorsList, setDoctorsList] = useState([]);
@@ -46,7 +70,38 @@ const Prescription = ({ patientId, onClose }) => {
           setMedicalHistory(r.medicalHistory || "");
           setDiagnosys(r.diagnosys || { BP: "", Diabetics: "", SPO2: "", Height: "", Weight: "", Others: "" });
           setMedicineAdvice(Array.isArray(r.medicineAdvice) ? r.medicineAdvice : (r.medicineAdvice ? [r.medicineAdvice] : []));
-          setAdvice(r.advice || "");
+          // load structured advice if present (backwards compatible with string)
+          const adv = r.advice;
+          if (!adv) {
+            // nothing
+          } else if (typeof adv === 'string') {
+            // legacy: treat as medication advice text
+            setMedicationAdvice(adv);
+            setSelectedTestTypes(["Medication"]);
+          } else if (typeof adv === 'object') {
+            if (Array.isArray(adv.testAdvice)) setTestAdviceRows(adv.testAdvice);
+            if (adv.medication) setMedicationAdvice(adv.medication);
+            if (adv.diet) setDietAdvice(adv.diet);
+            const sel = [];
+            if (adv.testAdvice && adv.testAdvice.length) sel.push("Test Advice");
+            if (adv.medication) sel.push("Medication");
+            if (adv.diet) sel.push("Diet");
+            setSelectedTestTypes(sel);
+          }
+          // capture original payload for dirty-check
+          const initialAdviceObj = (() => {
+            if (!r.advice) return {};
+            if (typeof r.advice === 'string') return { medication: r.advice };
+            return r.advice;
+          })();
+          const payloadSnap = {
+            initialComplain: r.initialComplain || "",
+            medicalHistory: r.medicalHistory || "",
+            diagnosys: r.diagnosys || {},
+            medicineAdvice: Array.isArray(r.medicineAdvice) ? r.medicineAdvice : (r.medicineAdvice ? [r.medicineAdvice] : []),
+            advice: initialAdviceObj
+          };
+          setOriginalPayload(payloadSnap);
         }
       } catch (e) {
         // ignore
@@ -57,6 +112,27 @@ const Prescription = ({ patientId, onClose }) => {
 
     if (patientId) fetchLatestAppointment();
   }, [patientId]);
+
+  // compute dirty state whenever key fields change
+  useEffect(() => {
+    try {
+      const currentAdvice = {};
+      if (selectedTestTypes.includes("Test Advice")) currentAdvice.testAdvice = testAdviceRows.filter(r => r.testName && r.testName.trim() !== "");
+      if (selectedTestTypes.includes("Medication")) currentAdvice.medication = medicationAdvice;
+      if (selectedTestTypes.includes("Diet")) currentAdvice.diet = dietAdvice;
+      const currentSnap = {
+        initialComplain: initialComplain || "",
+        medicalHistory: medicalHistory || "",
+        diagnosys: diagnosys || {},
+        medicineAdvice: medicineAdvice || [],
+        advice: currentAdvice
+      };
+      const dirty = JSON.stringify(originalPayload) !== JSON.stringify(currentSnap);
+      setIsDirty(Boolean(dirty));
+    } catch (e) {
+      setIsDirty(false);
+    }
+  }, [initialComplain, medicalHistory, diagnosys, medicineAdvice, selectedTestTypes, testAdviceRows, medicationAdvice, dietAdvice, originalPayload]);
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -114,7 +190,14 @@ const Prescription = ({ patientId, onClose }) => {
     const handleEnterActions = (e, modifiers = {}) => {
       // keep textareas normal
       const active = document.activeElement;
-      if (active && active.tagName === 'TEXTAREA') return true;
+      // let native controls (textareas, buttons, links, selects, checkboxes/radios) handle Enter
+      if (active) {
+        const tag = active.tagName;
+        const type = active.type || "";
+        if (tag === 'TEXTAREA') return true;
+        if (tag === 'BUTTON' || tag === 'A' || tag === 'SELECT') return true;
+        if (tag === 'INPUT' && (type === 'checkbox' || type === 'radio')) return true;
+      }
 
       const { ctrlOrMeta=false, tab=false, p=false } = modifiers;
 
@@ -152,6 +235,11 @@ const Prescription = ({ patientId, onClose }) => {
     const onKeyDown = (e) => {
       // handle Ctrl/Cmd shortcuts first
       const isCtrl = e.ctrlKey || e.metaKey;
+      const active = document.activeElement;
+      if (active && active.tagName === 'BUTTON') {
+        // don't intercept Enter/Tab when a button is focused
+        if (e.key === 'Enter' || e.key === 'Tab') return;
+      }
       if (isCtrl && (e.key === 'p' || e.key === 'P')) {
         // override browser print
         e.preventDefault();
@@ -360,13 +448,30 @@ const Prescription = ({ patientId, onClose }) => {
   async function handleSave(printAfter = false) {
     try {
       if (!appointmentId) return alert("No appointment found to attach the prescription to.");
-  await api.put(`/api/v1/appointment/patient/update/${patientId}`, {
-        result: [{ initialComplain, medicalHistory, diagnosys, medicineAdvice, advice }],
+      // Build structured advice
+      const adviceToSave = {};
+      if (selectedTestTypes.includes("Test Advice")) {
+        adviceToSave.testAdvice = testAdviceRows.filter(r => r.testName && r.testName.trim() !== "");
+      }
+      if (selectedTestTypes.includes("Medication")) {
+        adviceToSave.medication = medicationAdvice;
+      }
+      if (selectedTestTypes.includes("Diet")) {
+        adviceToSave.diet = dietAdvice;
+      }
+      // validation: ensure something meaningful is present
+      const hasContent = (initialComplain && initialComplain.trim()) || (Array.isArray(medicineAdvice) && medicineAdvice.length > 0) || (Object.keys(adviceToSave).length > 0);
+      if (!hasContent) {
+        toast.error("Please add at least one of: initial complaint, medicines or advice before saving.");
+        return;
+      }
+      await api.put(`/api/v1/appointment/patient/update/${patientId}`, {
+        result: [{ initialComplain, medicalHistory, diagnosys, medicineAdvice, advice: adviceToSave }],
         status: "Completed",
         doctorId: doctorId || undefined
       });
       if (doctorContact) {
-  await api.post(`/api/v1/message/send`, {
+        await api.post(`/api/v1/message/send`, {
           firstName: "System",
           lastName: "Notification",
           email: doctorContact.includes("@") ? doctorContact : "",
@@ -374,6 +479,18 @@ const Prescription = ({ patientId, onClose }) => {
           message: `Prescription completed for patient NIC: ${nic}`
         });
       }
+      toast.success("Prescription saved");
+      // refresh original snapshot to current state
+      const advSaved = adviceToSave;
+      const newSnap = {
+        initialComplain: initialComplain || "",
+        medicalHistory: medicalHistory || "",
+        diagnosys: diagnosys || {},
+        medicineAdvice: medicineAdvice || [],
+        advice: advSaved
+      };
+      setOriginalPayload(newSnap);
+      setIsDirty(false);
       if (printAfter) {
         if (onClose) onClose();
         navigate(`/preview/${patientId}`);
@@ -381,9 +498,17 @@ const Prescription = ({ patientId, onClose }) => {
         if (onClose) onClose();
       }
     } catch (e) {
-      alert("Failed to save prescription or notify doctor.");
+      console.error(e);
+      toast.error("Failed to save prescription or notify doctor.");
     }
   }
+
+  const handleClose = () => {
+    if (isDirty) {
+      if (!window.confirm("You have unsaved changes. Discard and close?")) return;
+    }
+    if (onClose) onClose();
+  };
 
   if (loading) return <div>Loading...</div>;
 
@@ -484,7 +609,61 @@ const Prescription = ({ patientId, onClose }) => {
               {/* 3 - Advice */}
               <div className="step-slide" style={{ flex: `0 0 ${100/steps.length}%` }}>
                 <div className={`form-step ${currentStep === 3 ? 'active full-step' : ''}`}>
-                  <div className="form-group full-width"><label>Advice</label><input value={advice} onChange={e => setAdvice(e.target.value)} /></div>
+                  <div className="form-row" style={{ marginBottom: 12 }}>
+                    {["Test Advice", "Medication", "Diet"].map((testType, index) => (
+                      <label key={index} style={{ marginRight: "1rem" }}>
+                        <input
+                          type="checkbox"
+                          value={testType}
+                          checked={selectedTestTypes.includes(testType)}
+                          onChange={e => handleCheckboxToggle(e, testType)}
+                        /> {testType}
+                      </label>
+                    ))}
+                  </div>
+                  {/* Test Advice Table */}
+                  {selectedTestTypes.includes("Test Advice") && (
+                    <div className="form-group full-width">
+                      <label>Test Advice</label>
+                      <table className="test-advice-table">
+                        <thead>
+                          <tr>
+                            <th>Test Name</th>
+                            <th>Test Type</th>
+                            <th>Precautions</th>
+                            <th>Test Date</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {testAdviceRows.map((row, idx) => (
+                            <tr key={idx}>
+                              <td><input type="text" value={row.testName} onChange={e => handleTestAdviceChange(idx, "testName", e.target.value)} /></td>
+                              <td><input type="text" value={row.testType} onChange={e => handleTestAdviceChange(idx, "testType", e.target.value)} /></td>
+                              <td><input type="text" value={row.precautions} onChange={e => handleTestAdviceChange(idx, "precautions", e.target.value)} /></td>
+                              <td><input type="date" value={row.testDate} onChange={e => handleTestAdviceChange(idx, "testDate", e.target.value)} /></td>
+                              <td><button type="button" className="remove-btn" onClick={() => setTestAdviceRows(prev => prev.filter((_, i) => i !== idx))}>Remove</button></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <button type="button" className="add-btn" onClick={addNewTestAdviceRow} style={{ marginTop: 8 }}>Add Test Row</button>
+                    </div>
+                  )}
+                  {/* Medication Advice Textarea */}
+                  {selectedTestTypes.includes("Medication") && (
+                    <div className="form-group full-width">
+                      <label>Medication Advice</label>
+                      <textarea value={medicationAdvice} onChange={e => setMedicationAdvice(e.target.value)} placeholder="Enter medication advice..." rows={2} />
+                    </div>
+                  )}
+                  {/* Diet Advice Textarea */}
+                  {selectedTestTypes.includes("Diet") && (
+                    <div className="form-group full-width">
+                      <label>Diet Advice</label>
+                      <textarea value={dietAdvice} onChange={e => setDietAdvice(e.target.value)} placeholder="Enter diet advice..." rows={2} />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -505,7 +684,53 @@ const Prescription = ({ patientId, onClose }) => {
                     {medicineAdvice.length === 0 ? <p className="muted">No medicines added</p> : (
                       <ul>{medicineAdvice.map((m, i) => <li key={i}>{m.name} — {m.dose} — {m.frequency} — {m.duration}</li>)}</ul>
                     )}
-                    <p><strong>Advice:</strong> {advice}</p>
+                    {(() => {
+                      const reviewAdvice = {};
+                      if (selectedTestTypes.includes("Test Advice")) reviewAdvice.testAdvice = testAdviceRows.filter(r => r.testName && r.testName.trim() !== "");
+                      if (selectedTestTypes.includes("Medication")) reviewAdvice.medication = medicationAdvice;
+                      if (selectedTestTypes.includes("Diet")) reviewAdvice.diet = dietAdvice;
+                      return (
+                        <>
+                          {reviewAdvice.testAdvice && reviewAdvice.testAdvice.length > 0 && (
+                            <div>
+                              <h4>Test Advice</h4>
+                              <table className="test-advice-table">
+                                <thead>
+                                  <tr>
+                                    <th>Test Name</th>
+                                    <th>Test Type</th>
+                                    <th>Precautions</th>
+                                    <th>Test Date</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {reviewAdvice.testAdvice.map((row, idx) => (
+                                    <tr key={idx}>
+                                      <td>{row.testName}</td>
+                                      <td>{row.testType}</td>
+                                      <td>{row.precautions}</td>
+                                      <td>{row.testDate}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                          {reviewAdvice.medication && (
+                            <div>
+                              <h4>Medication Advice</h4>
+                              <p>{reviewAdvice.medication}</p>
+                            </div>
+                          )}
+                          {reviewAdvice.diet && (
+                            <div>
+                              <h4>Diet Advice</h4>
+                              <p>{reviewAdvice.diet}</p>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -515,14 +740,20 @@ const Prescription = ({ patientId, onClose }) => {
         </div>
 
         <div className="wizard-footer">
-          {currentStep > 0 && <button className="btn secondary" onClick={prevStep}>Back</button>}
-          {currentStep < steps.length - 1 && <button className="btn secondary" onClick={nextStep}>Next</button>}
-          {currentStep === steps.length - 1 && (
-            <>
-              <button className="btn btn-primary" onClick={() => handleSave(false)}>Save</button>
-              <button className="btn btn-primary" onClick={() => handleSave(true)}>Save & Print</button>
-            </>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {currentStep > 0 && <button className="btn secondary" onClick={prevStep}>Back</button>}
+            {currentStep < steps.length - 1 && <button className="btn secondary" onClick={nextStep}>Next</button>}
+            {currentStep === steps.length - 1 && (
+              <>
+                <button className="btn btn-primary" onClick={() => handleSave(false)} disabled={!isDirty}>Save</button>
+                <button className="btn btn-primary" onClick={() => handleSave(true)} disabled={!isDirty}>Save & Print</button>
+              </>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button className="btn clear-btn" onClick={handleClose}>Close</button>
+            {isDirty ? <span style={{ color: '#b45309' }}>Unsaved changes</span> : <span style={{ color: '#0f766e' }}>Saved</span>}
+          </div>
         </div>
 
       </div>

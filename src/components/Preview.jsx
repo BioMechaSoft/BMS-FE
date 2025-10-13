@@ -232,12 +232,76 @@ const Preview = () => {
                                         )}
                                     </div>
                                 </div>
-                                {report?.advice && (
-                                    <div className="advice-box">
-                                        <h4>Doctor's Advice</h4>
-                                        <p>{report.advice}</p>
-                                    </div>
-                                )}
+                                                                                                {report?.advice && (() => {
+                                                                                                        const adv = report.advice;
+                                                                                                        if (!adv) return null;
+                                                                                                        // legacy string -> show as medication text
+                                                                                                        if (typeof adv === 'string') {
+                                                                                                            return (
+                                                                                                                <div className="advice-box">
+                                                                                                                    <h4 className="advice-title">Doctor's Advice</h4>
+                                                                                                                    <div className="advice-content">
+                                                                                                                        <p style={{ whiteSpace: 'pre-wrap' }}>{adv}</p>
+                                                                                                                    </div>
+                                                                                                                </div>
+                                                                                                            );
+                                                                                                        }
+
+                                                                                                        // structured object
+                                                                                                        const hasTest = Array.isArray(adv.testAdvice) && adv.testAdvice.length > 0;
+                                                                                                        const hasMed = adv.medication && String(adv.medication).trim() !== '';
+                                                                                                        const hasDiet = adv.diet && String(adv.diet).trim() !== '';
+                                                                                                        if (!hasTest && !hasMed && !hasDiet) return null;
+
+                                                                                                        return (
+                                                                                                            <div className="advice-box">
+                                                                                                                <h4 className="advice-title">Doctor's Advice</h4>
+                                                                                                                <div className="advice-grid">
+                                                                                                                    {hasTest && (
+                                                                                                                        <section className="advice-section test-advice">
+                                                                                                                            <h5 className="section-title">Test Advice ({adv.testAdvice.length})</h5>
+                                                                                                                            <table className="test-advice-table modern-table">
+                                                                                                                                <thead>
+                                                                                                                                    <tr>
+                                                                                                                                        <th>Test Name</th>
+                                                                                                                                        <th>Type</th>
+                                                                                                                                        <th>Precautions</th>
+                                                                                                                                        <th>Date</th>
+                                                                                                                                    </tr>
+                                                                                                                                </thead>
+                                                                                                                                <tbody>
+                                                                                                                                    {adv.testAdvice.map((t, i) => (
+                                                                                                                                        <tr key={i}>
+                                                                                                                                            <td>{t.testName}</td>
+                                                                                                                                            <td>{t.testType}</td>
+                                                                                                                                            <td style={{ maxWidth: 240, whiteSpace: 'pre-wrap' }}>{t.precautions}</td>
+                                                                                                                                            <td>{t.testDate ? formatDate(t.testDate) : '-'}</td>
+                                                                                                                                        </tr>
+                                                                                                                                    ))}
+                                                                                                                                </tbody>
+                                                                                                                            </table>
+                                                                                                                        </section>
+                                                                                                                    )}
+
+                                                                                                                    <div className="advice-section vertical-stack">
+                                                                                                                        {hasMed && (
+                                                                                                                            <section className="advice-section medication-advice">
+                                                                                                                                <h5 className="section-title">Medication Advice</h5>
+                                                                                                                                <div className="advice-content"><p style={{ whiteSpace: 'pre-wrap' }}>{adv.medication}</p></div>
+                                                                                                                            </section>
+                                                                                                                        )}
+
+                                                                                                                        {hasDiet && (
+                                                                                                                            <section className="advice-section diet-advice">
+                                                                                                                                <h5 className="section-title">Diet Advice</h5>
+                                                                                                                                <div className="advice-content"><p style={{ whiteSpace: 'pre-wrap' }}>{adv.diet}</p></div>
+                                                                                                                            </section>
+                                                                                                                        )}
+                                                                                                                    </div>
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                        );
+                                                                                                })()}
                             </div>
 
                             {/* Doctor's Notes & Follow-up */}

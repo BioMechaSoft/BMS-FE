@@ -48,6 +48,7 @@ const Appointment = () => {
   const [departmentSearch, setDepartmentSearch] = useState("");
   const [searchNameOrPhone, setSearchNameOrPhone] = useState("");
   const formRef = useRef(null);
+  const keysPressed = useRef(new Set());
 
   const departmentsArray = [
     "Pediatrics",
@@ -111,6 +112,121 @@ const Appointment = () => {
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, []);
+
+  // keyboard navigation inside the appointment form
+  useEffect(() => {
+    const selector = 'input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])';
+
+    const getFocusable = (container) => {
+      if (!container) return [];
+      return Array.from(container.querySelectorAll(selector)).filter(el => el.offsetParent !== null);
+    };
+
+    const focusNext = (active) => {
+      const container = formRef.current;
+      if (!container) return false;
+      const focusables = getFocusable(container);
+      const idx = focusables.indexOf(active);
+      if (idx >= 0 && idx < focusables.length - 1) {
+        focusables[idx + 1].focus();
+        return true;
+      }
+      return false;
+    };
+
+    const focusPrev = (active) => {
+      const container = formRef.current;
+      if (!container) return false;
+      const focusables = getFocusable(container);
+      const idx = focusables.indexOf(active);
+      if (idx > 0) {
+        focusables[idx - 1].focus();
+        return true;
+      }
+      return false;
+    };
+
+    const onKeyDown = (e) => {
+      const active = document.activeElement;
+      // only handle when focus is inside the form
+      if (!formRef.current || !formRef.current.contains(active)) return;
+
+      // track pressed keys for combos
+      keysPressed.current.add(e.key);
+
+      const isCtrl = e.ctrlKey || e.metaKey;
+
+      // Ctrl/Cmd+V -> save & print (scoped)
+      if (isCtrl && (e.key === 'v' || e.key === 'V')) {
+        e.preventDefault();
+        setDownloadInvoice(true);
+        setTimeout(() => handleAppointment(), 50);
+        return;
+      }
+
+      // allow native behavior for buttons, links, selects and checkboxes/radios
+      if (active) {
+        const tag = active.tagName;
+        const type = active.type || "";
+        if (tag === 'TEXTAREA') return;
+        if (tag === 'BUTTON' || tag === 'A' || tag === 'SELECT') return;
+        if (tag === 'INPUT' && (type === 'checkbox' || type === 'radio')) return;
+      }
+
+      // Enter handling: plain Enter -> next field; Enter+Tab -> next step
+      if (e.key === 'Enter') {
+        // detect Enter+Tab combo via keysPressed
+        const hasTab = keysPressed.current.has('Tab');
+        if (hasTab) {
+          e.preventDefault();
+          setStep(s => Math.min(s + 1, 4));
+          return;
+        }
+        e.preventDefault();
+        const moved = focusNext(active);
+        if (!moved) {
+          setStep(s => Math.min(s + 1, 4));
+        }
+        return;
+      }
+
+      // Arrow navigation
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const moved = focusNext(active);
+        if (!moved) setStep(s => Math.min(s + 1, 4));
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const moved = focusPrev(active);
+        if (!moved) setStep(s => Math.max(s - 1, 1));
+        return;
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setStep(s => Math.min(s + 1, 4));
+        return;
+      }
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setStep(s => Math.max(s - 1, 1));
+        return;
+      }
+    };
+
+    const onKeyUp = (e) => {
+      // remove from pressed set
+      keysPressed.current.delete(e.key);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, [formRef]);
 
   // set default appointment date to today (yyyy-mm-dd)
   useEffect(() => {
