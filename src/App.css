@@ -29,11 +29,12 @@ body {
 }
 .page {
   margin-left: 6.5rem; /* 120px */
-  background: #e5e5e5;
+  background: var(--bg-main);
   padding: 2.5rem; /* 40px */
   min-height: 100vh;
   border-top-left-radius: 3.125rem; /*50px*/
   border-bottom-left-radius: 3.125rem; /*50px*/
+  transition: background 0.3s;
 }
 @media (max-width: 485px) { /*1208px*/
   .page { margin-left: 0; border-radius: 0; }
@@ -74,8 +75,20 @@ body {
 .form-component form div { display:flex; gap:1.875rem }
 .form-component form input, .form-component form select, .form-component form textarea {
   flex:1; font-size:1.5rem; padding:0.625rem 0.625rem 0.625rem 2.5rem; border-radius:0.4375rem; border:0.0625rem solid gray }
-.form-component button { padding:0.625rem 2.1875rem; color:#fff; font-weight:700; width:fit-content; border:none; border-radius:0.5rem; font-size:1.5rem; margin-bottom:1.875rem; background:linear-gradient(140deg,#9083d5,#271776ca) }
-.form-component .wrapper { display:flex; gap:3.125rem }
+.form-component button {
+  padding: 0.625rem 2.1875rem;
+  color: var(--text-accent);
+  font-weight: 700;
+  width: fit-content;
+  border: none;
+  border-radius: var(--btn-radius);
+  font-size: var(--text-size);
+  margin-bottom: 1.875rem;
+  background: var(--btn-gradient);
+  opacity: var(--btn-opacity);
+  transition: border-radius 0.2s, opacity 0.2s, font-size 0.2s, background 0.3s;
+}
+  .form-component .wrapper { display:flex; gap:3.125rem }
 .form-component .wrapper .banner {
   flex: 1;
 }
@@ -596,4 +609,57 @@ input[type="time"]:before {
   content: attr(placeholder);
   color: #444;
   margin-right: 0.5em;
+}
+/* THEME OVERRIDES */
+.theme-light {
+  --bg-main: #e5e5e5;
+  --bg-card: #fff;
+  --accent: #3939d9f2;
+  --btn-gradient: linear-gradient(140deg,#9083d5,#271776ca);
+  --text-main: #111;
+  --text-accent: #fff;
+}
+.theme-dark {
+  --bg-main: #181818;
+  --bg-card: #232323;
+  --accent: #0b74ff;
+  --btn-gradient: linear-gradient(140deg,#232323,#0b74ff);
+  --text-main: #fff;
+  --text-accent: #0b74ff;
+}
+.theme-cyberpunk {
+  --bg-main: #0f1021;
+  --bg-card: #232946;
+  --accent: #ff008d;
+  --btn-gradient: linear-gradient(140deg,#ff008d,#00fff7);
+  --text-main: #fff;
+  --text-accent: #ff008d;
+}
+.theme-blackpink {
+  --bg-main: #1a001a;
+  --bg-card: #ffb6e6;
+  --accent: #ff008d;
+  --btn-gradient: linear-gradient(140deg,#ffb6e6,#ff008d);
+  --text-main: #1a001a;
+  --text-accent: #fff;
+}
+.theme-retro {
+  --bg-main: #f5e9da;
+  --bg-card: #ffe066;
+  --accent: #ff6f3c;
+  --btn-gradient: linear-gradient(140deg,#ffe066,#ff6f3c);
+  --text-main: #2d1e2f;
+  --text-accent: #ff6f3c;
+}
+.theme-darkgreen {
+  --bg-main: #0d1b1e;
+  --bg-card: #1b2a2f;
+  --accent: #00b894;
+  --btn-gradient: linear-gradient(140deg,#1b2a2f,#00b894);
+  --text-main: #fff;
+  --text-accent: #00b894;
+}
+/* Custom user theme (overrides via inline style or .theme-custom) */
+.theme-custom {
+  /* These will be set dynamically */
 }

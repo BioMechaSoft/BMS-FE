@@ -2,7 +2,8 @@ import React, { useContext, useEffect, useState } from "react";
 import { Context } from "../main";
 import { Navigate, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import api from "../utils/api";
+import { useDispatch, useSelector } from 'react-redux';
+import { createAdminRequest, resetAdminCreate } from '../store/adminCreateSlice';
 
 const AddNewAdmin = () => {
   const { isAuthenticated, setIsAuthenticated, admin } = useContext(Context);
@@ -36,30 +37,32 @@ const AddNewAdmin = () => {
   }, [role, admin]);
 
   const navigateTo = useNavigate();
+  const dispatch = useDispatch();
+  const adminCreate = useSelector(s => s.adminCreate);
 
   const handleAddNewAdmin = async (e) => {
     e.preventDefault();
-    try {
-  const payload = { firstName, lastName, email, phone, nic, dob, gender, password, assignedDoctors };
-  await api.post('/api/v1/user/compounder/addnew', payload, { headers: { 'Content-Type': 'application/json' } })
-        .then((res) => {
-          toast.success(res.data.message);
-          setIsAuthenticated(true);
-          navigateTo('/');
-          setFirstName('');
-          setLastName('');
-          setEmail('');
-          setPhone('');
-          setNic('');
-          setDob('');
-          setGender('');
-          setPassword('');
-          setAssignedDoctors([]);
-        });
-    } catch (error) {
-      toast.error(error.response.data.message);
-    }
+    const payload = { firstName, lastName, email, phone, nic, dob, gender, password, assignedDoctors };
+    dispatch(createAdminRequest(payload));
   };
+
+  // Reset form and redirect on success
+  useEffect(() => {
+    if (adminCreate.success) {
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setPhone('');
+      setNic('');
+      setDob('');
+      setGender('');
+      setPassword('');
+      setAssignedDoctors([]);
+      dispatch(resetAdminCreate());
+      setIsAuthenticated(true);
+      navigateTo('/');
+    }
+  }, [adminCreate.success]);
 
   if (!isAuthenticated) {
     return <Navigate to={"/login"} />;
@@ -77,12 +80,14 @@ const AddNewAdmin = () => {
               placeholder="First Name"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
+              disabled={adminCreate.creating}
             />
             <input
               type="text"
               placeholder="Last Name"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
+              disabled={adminCreate.creating}
             />
           </div>
           <div>
@@ -91,12 +96,14 @@ const AddNewAdmin = () => {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={adminCreate.creating}
             />
             <input
               type="number"
               placeholder="Mobile Number"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
+              disabled={adminCreate.creating}
             />
           </div>
           <div>
@@ -105,17 +112,19 @@ const AddNewAdmin = () => {
               placeholder="NIC"
               value={nic}
               onChange={(e) => setNic(e.target.value)}
+              disabled={adminCreate.creating}
             />
             <input
               type={"date"}
               placeholder="Date of Birth"
               value={dob}
               onChange={(e) => setDob(e.target.value)}
+              disabled={adminCreate.creating}
             />
           </div>
           <div className="outer-gnp-box" style={{ flexDirection: 'column',  }}>
             <div className="gnp-box">
-            <select value={gender} onChange={(e) => setGender(e.target.value)}>
+            <select value={gender} onChange={(e) => setGender(e.target.value)} disabled={adminCreate.creating}>
               <option value="">Select Gender</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
@@ -125,6 +134,7 @@ const AddNewAdmin = () => {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={adminCreate.creating}
               />
             </div>
             {/* If Admin creating a compounder, allow assignment to multiple doctors. If doctor creating, assign to themselves */}
@@ -134,7 +144,7 @@ const AddNewAdmin = () => {
                 <div style={{ maxHeight: '100px', width: '400px', overflowY: 'auto',  marginTop: '0.5rem',flexDirection:'column', alignItems: 'start' }}>
                   {availableDoctors.map((d) => (
                     <label key={d._id} style={{ minHeight:"1.2rem", overflow:'hidden', display: 'flex', gap: '0.5rem', alignItems: 'center', padding: '0.25rem' }}>
-                      <input type="checkbox" checked={assignedDoctors.includes(d._id)} onChange={(e) => {
+                      <input type="checkbox" checked={assignedDoctors.includes(d._id)} disabled={adminCreate.creating} onChange={(e) => {
                         if (e.target.checked) setAssignedDoctors((s) => [...s, d._id]);
                         else setAssignedDoctors((s) => s.filter((id) => id !== d._id));
                       }} />
@@ -151,7 +161,10 @@ const AddNewAdmin = () => {
             )}
           </div>
           <div style={{ justifyContent: "center", alignItems: "center" }}>
-            <button type="submit">CREATE COMPOUNDER</button>
+            <button type="submit" disabled={adminCreate.creating}>
+              {adminCreate.creating ? 'Creating...' : 'CREATE COMPOUNDER'}
+            </button>
+            {adminCreate.error && <div className="error-message" style={{ color: 'red', marginTop: 8 }}>{adminCreate.error}</div>}
           </div>
         </form>
       </section>

@@ -4,7 +4,8 @@ import "./preview.css";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useParams } from 'react-router-dom';
-import api from '../utils/api';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchPreviewRequest, resetPreview } from '../store/previewSlice';
 import { Context } from '../main';
 
 // Helper: format date
@@ -12,9 +13,12 @@ const formatDate = (date) => date ? new Date(date).toLocaleDateString() : '';
 
 const Preview = () => {
     const { patientId } = useParams();
-    const [patient, setPatient] = useState(null);
-    const [doctor, setDoctor] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const dispatch = useDispatch();
+    const preview = useSelector(s => s.preview);
+    const patient = preview.patient;
+    const doctor = preview.doctor;
+    const loading = preview.loading;
+    const error = preview.error;
     const [editMode, setEditMode] = useState(false);
     const { isAuthenticated, admin } = useContext(Context);
 
@@ -24,61 +28,8 @@ const Preview = () => {
 
     useEffect(() => {
         if (!patientId) return;
-        const fetchAndComplete = async () => {
-            try {
-                const { data: ad } = await api.get(`/api/v1/appointment/patient/${patientId}`);
-                const appts = ad.appointments || [];
-                if (appts.length > 0) {
-                    appts.sort((a, b) => new Date(b.appointment_date) - new Date(a.appointment_date));
-                    const latest = appts[0];
-                    // Always set status to Completed if not already
-                    if (latest.status !== 'Completed') {
-                        try {
-                            await api.put(`/api/v1/appointment/patient/update/${patientId}`, { status: 'Completed' });
-                        } catch (err) {
-                            // ignore error, still show prescription
-                        }
-                    }
-                    const fetched = {
-                        _id: latest.patientId || patientId,
-                        firstName: latest.firstName || latest.patientName || '',
-                        lastName: latest.lastName || '',
-                        nic: latest.nic || latest.NIC || '',
-                        email: latest.email || '',
-                        phone: latest.phone || latest.contact || '',
-                        dob: latest.dob || latest.DOB || null,
-                        gender: latest.gender || '',
-                        updatedAt: latest.updatedAt || latest.appointment_date,
-                        weight: latest.result && latest.result[0] && latest.result[0].diagnosys ? latest.result[0].diagnosys.Weight : latest.weight,
-                        report: latest.result || [],
-                        appointmentId: latest._id,
-                        appointment_date: latest.appointment_date,
-                        examinedBy: latest.examinedBy || latest.doctorName || '',
-                        reportdate: latest.reportdate || '',
-                        address: latest.address || '',
-                        department: latest.department || '',
-                        price: latest.price || 0,
-                        paymentStatus: latest.paymentStatus || '',
-                    };
-                    setPatient(fetched);
-                    if (latest.doctorId) {
-                        try {
-                            const { data: dd } = await api.get(`/api/v1/user/doctor/${latest.doctorId}`);
-                            if (dd && dd.doctor) setDoctor(dd.doctor);
-                        } catch (e) {
-                            setDoctor(null);
-                        }
-                    }
-                } else {
-                    setPatient(null);
-                }
-            } catch (e) {
-                setPatient(null);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchAndComplete();
+        dispatch(fetchPreviewRequest({ patientId }));
+        return () => { dispatch(resetPreview()); };
     }, [patientId]);
 
 
@@ -124,6 +75,7 @@ const Preview = () => {
 
 
     if (loading) return <div className='prescription'><div>Loading...</div></div>;
+    if (error) return <div className='prescription'><div style={{ color: 'red' }}>{error}</div></div>;
     if (!patient) return <div className='prescription'><div>Patient not found.</div></div>;
 
     const report = Array.isArray(patient.report) && patient.report.length > 0 ? patient.report[0] : null;
