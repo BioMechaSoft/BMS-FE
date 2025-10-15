@@ -428,6 +428,9 @@ const Appointment = () => {
       }
     }
   };
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); // normalize to local date
+  const todayStr = d.toISOString().split('T')[0]; 
 
   return (
     <>
@@ -544,17 +547,23 @@ const Appointment = () => {
                   <input
                     type="date"
                     placeholder="Date of Birth"
+                    max={todayStr}
                     value={dob}
                     onChange={(e) => {
-                      setDob(e.target.value);
+                      const v = e.target.value;
+                      setDob(v && v > todayStr ? todayStr : v);
                       setAge(dobToAge(e.target.value));
                     }}
                   />
                   <input
                     type="date"
                     placeholder="Appointment Date"
+                    min={todayStr}
                     value={appointmentDate}
-                    onChange={(e) => setAppointmentDate(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setAppointmentDate(v && v < todayStr ? todayStr : v);
+                    }}
                   />
                 </div>
                 <div className="btn-container">
