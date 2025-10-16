@@ -26,6 +26,7 @@ const Prescription = ({ patientId, onClose }) => {
   const [testAdviceRows, setTestAdviceRows] = useState([{ testName: "", testType: "", precautions: "", testDate: "" }]);
   const [medicationAdvice, setMedicationAdvice] = useState("");
   const [dietAdvice, setDietAdvice] = useState("");
+  const [followup_date, setFollowup_date] = useState(false);
   const [originalPayload, setOriginalPayload] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
   // Checkbox toggle for advice types
@@ -53,6 +54,9 @@ const Prescription = ({ patientId, onClose }) => {
   const steps = ["Patient", "Vitals & History", "Medicines", "Advice", "Review"];
   const rootRef = React.useRef(null);
   const keysPressed = React.useRef(new Set());
+  // today ISO for date min
+  const todayISO = new Date().toISOString().split('T')[0];
+  const isIsoDateString = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s).getTime());
 
   useEffect(() => {
     const fetchLatestAppointment = async () => {
@@ -90,6 +94,12 @@ const Prescription = ({ patientId, onClose }) => {
             if (adv.diet) sel.push("Diet");
             setSelectedTestTypes(sel);
           }
+          // load followup_date if provided and looks like ISO date or string
+          if (r.advice && r.advice.followup_date) {
+            // prefer ISO-like date strings
+            if (isIsoDateString(r.advice.followup_date)) setFollowup_date(r.advice.followup_date);
+            else setFollowup_date(String(r.advice.followup_date));
+          }
           // capture original payload for dirty-check
           const initialAdviceObj = (() => {
             if (!r.advice) return {};
@@ -101,7 +111,8 @@ const Prescription = ({ patientId, onClose }) => {
             medicalHistory: r.medicalHistory || "",
             diagnosys: r.diagnosys || {},
             medicineAdvice: Array.isArray(r.medicineAdvice) ? r.medicineAdvice : (r.medicineAdvice ? [r.medicineAdvice] : []),
-            advice: initialAdviceObj
+            advice: initialAdviceObj,
+            followup_date: (r.advice && r.advice.followup_date) || ''
           };
           setOriginalPayload(payloadSnap);
         }
@@ -127,7 +138,8 @@ const Prescription = ({ patientId, onClose }) => {
         medicalHistory: medicalHistory || "",
         diagnosys: diagnosys || {},
         medicineAdvice: medicineAdvice || [],
-        advice: currentAdvice
+        advice: currentAdvice,
+        followup_date: followup_date || ''
       };
       const dirty = JSON.stringify(originalPayload) !== JSON.stringify(currentSnap);
       setIsDirty(Boolean(dirty));
@@ -458,6 +470,8 @@ const Prescription = ({ patientId, onClose }) => {
       if (selectedTestTypes.includes("Medication")) {
         adviceToSave.medication = medicationAdvice;
       }
+      // include followup_date when present (string)
+      if (followup_date) adviceToSave.followup_date = followup_date;
       if (selectedTestTypes.includes("Diet")) {
         adviceToSave.diet = dietAdvice;
       }
@@ -489,7 +503,8 @@ const Prescription = ({ patientId, onClose }) => {
         medicalHistory: medicalHistory || "",
         diagnosys: diagnosys || {},
         medicineAdvice: medicineAdvice || [],
-        advice: advSaved
+        advice: advSaved,
+        followup_date: followup_date || ''
       };
       setOriginalPayload(newSnap);
       setIsDirty(false);
@@ -729,6 +744,11 @@ const Prescription = ({ patientId, onClose }) => {
                       <textarea value={dietAdvice} onChange={e => setDietAdvice(e.target.value)} placeholder="Enter diet advice..." rows={2} />
                     </div>
                   )}
+                  {/* Follow-up Date */}
+                  <div className="form-group">
+                    <label>Follow-up Date</label>
+                    <input type="date" value={isIsoDateString(followup_date) ? followup_date : ''} onChange={e => setFollowup_date(e.target.value)} min={todayISO} />
+                  </div>
                 </div>
               </div>
 
@@ -785,6 +805,7 @@ const Prescription = ({ patientId, onClose }) => {
                             <div>
                               <h4>Medication Advice</h4>
                               <p>{reviewAdvice.medication}</p>
+                              {followup_date && (<p><strong>Follow-up:</strong> {followup_date}</p>)}
                             </div>
                           )}
                           {reviewAdvice.diet && (

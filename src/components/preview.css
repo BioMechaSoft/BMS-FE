@@ -77,6 +77,31 @@
   background: #fff;
 }
 
+/* A4 paper styling for clean print/PDF output */
+.a4-paper {
+  width: 280mm !important;
+  min-height: 297mm !important;
+  background: #fff !important;
+  margin: 0 auto !important;
+  padding: 15mm !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  overflow: visible !important;
+  color: #111;
+  font-size: 12pt;
+}
+
+.a4-paper .modern-header { grid-template-columns: 1.5fr 5rem 1fr; gap: 1rem; }
+.a4-paper .Dr-details h1 { font-size: 1.25rem; }
+.a4-paper .clinic-name { font-size: 1rem; }
+.a4-paper .pdata { gap: 1rem; }
+.a4-paper .fixed-area { max-height: 6.3rem; }
+
+/* Remove decorative shadows when printing to PDF */
+.a4-paper .presdownload { box-shadow: none; border: none; }
+
+
 .modern-header {
   width: 100%;
   display: grid;
@@ -151,6 +176,9 @@
   font-weight: 600;
   margin-top: 0.5rem;
 }
+
+/* Ensure sensitive/variable UI is hidden in preview/print */
+.prescription .hide-on-preview { display: none; }
 
 .lCol p, .rightCol p {
   margin: 0.18rem 0;
@@ -304,7 +332,7 @@
   .presdownload, .presdownload * { visibility: visible; }
   .presdownload { position: absolute; left: 0; top: 0; width: 210mm; min-height: 297mm; }
   .content { padding: 1.5cm 1.5cm 1cm 1.5cm !important; }
-  .pdf-down-btn, .edit-btn-bar { display: none !important; }
+  .pdf-down-btn, .edit-btn-bar, .hide-on-print { display: none !important; }
 }
 
 @media (max-width: 56.25rem) { /* 900px */

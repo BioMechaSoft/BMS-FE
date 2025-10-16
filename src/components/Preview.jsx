@@ -37,7 +37,18 @@ const Preview = () => {
     const downLoadPDF = async () => {
         const input = document.getElementById('pdfDownload');
         if (!input) return;
-        const canvas = await html2canvas(input, { scale: 2, useCORS: true });
+        // prepare a clean A4 surface for capture
+        const originalClass = input.className;
+        const originalStyle = { width: input.style.width, minHeight: input.style.minHeight, boxShadow: input.style.boxShadow, borderRadius: input.style.borderRadius };
+        input.classList.add('a4-paper');
+        // use a higher scale to improve text clarity in PDF
+        const canvas = await html2canvas(input, { scale: 3, useCORS: true, logging: false });
+        // restore
+        input.className = originalClass;
+        input.style.width = originalStyle.width || '';
+        input.style.minHeight = originalStyle.minHeight || '';
+        input.style.boxShadow = originalStyle.boxShadow || '';
+        input.style.borderRadius = originalStyle.borderRadius || '';
         const imgWidthPx = canvas.width;
         const imgHeightPx = canvas.height;
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -85,6 +96,7 @@ const Preview = () => {
         contact: doctor?.phone || doctor?.email || ''
     };
     const medicines = Array.isArray(report?.medicineAdvice) ? report.medicineAdvice : (report?.medicineAdvice ? [report?.medicineAdvice] : []);
+    const previewFollowup = (report && report.advice && report.advice.followup_date) || patient.reportdate || '';
 
     // --- UI ---
     return (
@@ -116,22 +128,20 @@ const Preview = () => {
                         <section className="pDetails modern-section">
                             <div className="outer-data-box patient-box">
                                 <div className="pdata">
-                                    <div className="lCol">
-                                        <p><strong>ID:</strong> {patient._id}</p>
-                                        <p><strong>Name:</strong> {patient.firstName} {patient.lastName}</p>
-                                        {patient.nic && <p><strong>NIC:</strong> {patient.nic}</p>}
-                                        {patient.email && <p><strong>Email:</strong> {patient.email}</p>}
-                                        {patient.phone && <p><strong>Phone:</strong> {patient.phone}</p>}
-                                        {patient.gender && <p><strong>Gender:</strong> {patient.gender}</p>}
-                                        {patient.dob && <p><strong>DOB:</strong> {formatDate(patient.dob)}</p>}
-                                        {patient.address && <p><strong>Address:</strong> {patient.address}</p>}
-                                    </div>
-                                    <div className="rightCol">
+                                        <div className="lCol">
+                                            <p><strong>Name:</strong> {patient.firstName} {patient.lastName}</p>
+                                            {patient.nic && <p className="hide-on-print"><strong>NIC:</strong> {patient.nic}</p>}
+                                            {patient.email && <p><strong>Email:</strong> {patient.email}</p>}
+                                            {patient.phone && <p><strong>Phone:</strong> {patient.phone}</p>}
+                                            {patient.gender && <p><strong>Gender:</strong> {patient.gender}</p>}
+                                            {patient.dob && <p><strong>DOB:</strong> {formatDate(patient.dob)}</p>}
+                                            {patient.address && <p><strong>Address:</strong> {patient.address}</p>}
+                                        </div>
+                                        <div className="rightCol">
                                         <p><strong>Date:</strong> {formatDate(patient.updatedAt)}</p>
                                         {patient.weight && <p><strong>Weight:</strong> {patient.weight}</p>}
-                                        {patient.appointmentId && <p><strong>Appointment:</strong> {patient.appointmentId}</p>}
+                                        {patient.appointmentId && <p className="hide-on-print"><strong>Appointment:</strong> {patient.appointmentId}</p>}
                                         {patient.department && <p><strong>Department:</strong> {patient.department}</p>}
-                                        <p><strong>Payment:</strong> {patient.price} ({patient.paymentStatus})</p>
                                     </div>
                                 </div>
                             </div>
@@ -258,20 +268,12 @@ const Preview = () => {
 
                             {/* Doctor's Notes & Follow-up */}
                             <div className="auth-box modern-auth-box">
-                                {patient.reportdate && <h4 className='follow-up-date'>Next Follow-up Date: {patient.reportdate}</h4>}
+                                {previewFollowup && <h4 className='follow-up-date'>Next Follow-up Date: {previewFollowup}</h4>}
                                 {patient.examinedBy && <h4 className='sign'>Examined By: {patient.examinedBy}</h4>}
                             </div>
                         </section>
 
-                        {/* Edit Button for Doctor/Admin */}
-                        {canEdit && (
-                            <div className="edit-btn-bar">
-                                <button className="edit-btn" onClick={() => setEditMode((v) => !v)}>
-                                    {editMode ? 'Cancel Edit' : 'Edit Prescription'}
-                                </button>
-                                {editMode && <span className="edit-hint">(Fields will be editable here in next step)</span>}
-                            </div>
-                        )}
+                     
 
                         {/* Footer */}
                         <footer className="footer modern-footer">
