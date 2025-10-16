@@ -9,6 +9,7 @@ import Prescription from "./Prescription";
 import Modal from "react-modal";
 import { FaTrash } from "react-icons/fa";
 import RequirePermission from "./RequirePermission";
+import { MdOutlineContentPasteSearch } from "react-icons/md";
 // import Doctors from "./Doctors";
 
 const Dashboard = () => {
@@ -44,7 +45,9 @@ const Dashboard = () => {
           const { data } = await api.get(`/api/v1/user/doctors`);
           setDoctors(data.doctors);
         } else {
-          const { data } = await api.get(`/api/v1/user/doctor/search?query=${encodeURIComponent(searchTerm)}`);
+          const { data } = await api.get(
+            `/api/v1/user/doctor/search?query=${encodeURIComponent(searchTerm)}`
+          );
           setDoctors(data.doctors);
         }
       } catch (error) {
@@ -59,8 +62,8 @@ const Dashboard = () => {
     if (!window.confirm("Delete this appointment?")) return;
     try {
       await api.delete(`/api/v1/appointment/delete/${id}`);
-      setAppointments(prev => prev.filter(a => a._id !== id));
-      setSelectedAppointments(prev => prev.filter(x => x !== id));
+      setAppointments((prev) => prev.filter((a) => a._id !== id));
+      setSelectedAppointments((prev) => prev.filter((x) => x !== id));
       toast.success("Appointment deleted");
     } catch (err) {
       toast.error("Delete failed");
@@ -69,11 +72,17 @@ const Dashboard = () => {
 
   // Bulk delete selected appointments
   const handleBulkDelete = async () => {
-    if (selectedAppointments.length === 0) return toast.info("No appointments selected");
-    if (!window.confirm(`Delete ${selectedAppointments.length} appointments?`)) return;
+    if (selectedAppointments.length === 0)
+      return toast.info("No appointments selected");
+    if (!window.confirm(`Delete ${selectedAppointments.length} appointments?`))
+      return;
     try {
-      await api.post(`/api/v1/appointment/bulk-delete`, { ids: selectedAppointments });
-      setAppointments(prev => prev.filter(a => !selectedAppointments.includes(a._id)));
+      await api.post(`/api/v1/appointment/bulk-delete`, {
+        ids: selectedAppointments,
+      });
+      setAppointments((prev) =>
+        prev.filter((a) => !selectedAppointments.includes(a._id))
+      );
       setSelectedAppointments([]);
       toast.success("Bulk delete complete");
     } catch (err) {
@@ -83,7 +92,9 @@ const Dashboard = () => {
 
   // Toggle select for bulk delete
   const toggleSelectAppointment = (id) => {
-    setSelectedAppointments(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    setSelectedAppointments((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
   };
 
   const handleUpdateStatus = async (appointmentId, status) => {
@@ -143,9 +154,9 @@ const Dashboard = () => {
               <p>
                 Welcome to your dashboard! Here you can manage appointments,
                 view patient information, and oversee your medical practice with
-                ease.
-                If you have any questions or need assistance, feel free to reach out
-                to our support team. <b>Biomechasoft +91 9609436103</b>
+                ease. If you have any questions or need assistance, feel free to
+                reach out to our support team.{" "}
+                <b>Biomechasoft +91 9609436103</b>
               </p>
             </div>
           </div>
@@ -192,7 +203,7 @@ const Dashboard = () => {
           </div>
 
           <div className="search-box">
-            <label>Search</label>
+            <MdOutlineContentPasteSearch size={"1.8rem"} color="grey" />
             <input
               type="text"
               placeholder="Search by name/phone/date"
@@ -205,119 +216,180 @@ const Dashboard = () => {
         <div className="banner table-banner">
           <div className="heading-box">
             <h5>Appointments</h5>
-            <button
-              className="btn add-btn"
-              onClick={() => navigate("/add-appointment")}
-            >
-              Add new
-            </button>
-            <RequirePermission allowedRoles={["Admin"]}>
+            <div className="btn-box">
               <button
-                className="btn remove-btn"
-                onClick={handleBulkDelete}
-                disabled={selectedAppointments.length === 0}
-                style={{marginLeft:'1rem'}}
+                className="btn add-btn"
+                onClick={() => navigate("/add-appointment")}
               >
-                Delete Selected ({selectedAppointments.length})
+                Book Appointment
               </button>
-            </RequirePermission>
+              <RequirePermission allowedRoles={["Admin"]}>
+                <button
+                  className="btn remove-btn"
+                  onClick={handleBulkDelete}
+                  disabled={selectedAppointments.length === 0}
+                >
+                  Delete Selected ({selectedAppointments.length})
+                </button>
+              </RequirePermission>
+            </div>
           </div>
 
           <div className="table-container">
             <table>
               <thead>
                 <tr>
-                    <th>
-                      <input
-                        type="checkbox"
-                        checked={(() => {
-                          const filteredAppointments = (appointments || []).filter(
-                            (appointment) => {
-                              try {
-                                const apptDate = new Date(appointment.appointment_date);
-                                const today = new Date();
-                                const startOfToday = new Date(
-                                  today.getFullYear(),
-                                  today.getMonth(),
-                                  today.getDate()
+                  <th>
+                    <input
+                      type="checkbox"
+                      checked={(() => {
+                        const filteredAppointments = (
+                          appointments || []
+                        ).filter((appointment) => {
+                          try {
+                            const apptDate = new Date(
+                              appointment.appointment_date
+                            );
+                            const today = new Date();
+                            const startOfToday = new Date(
+                              today.getFullYear(),
+                              today.getMonth(),
+                              today.getDate()
+                            );
+                            if (filterOption === "Today") {
+                              const apptYmd = apptDate
+                                .toISOString()
+                                .slice(0, 10);
+                              const todayYmd = startOfToday
+                                .toISOString()
+                                .slice(0, 10);
+                              if (apptYmd !== todayYmd) return false;
+                            } else if (filterOption === "Old") {
+                              if (apptDate >= startOfToday) return false;
+                            } else if (filterOption === "Upcoming") {
+                              if (apptDate <= startOfToday) return false;
+                            } else if (filterOption === "Custom") {
+                              if (customStart && customEnd) {
+                                const start = new Date(
+                                  customStart + "T00:00:00"
                                 );
-                                if (filterOption === "Today") {
-                                  const apptYmd = apptDate.toISOString().slice(0, 10);
-                                  const todayYmd = startOfToday.toISOString().slice(0, 10);
-                                  if (apptYmd !== todayYmd) return false;
-                                } else if (filterOption === "Old") {
-                                  if (apptDate >= startOfToday) return false;
-                                } else if (filterOption === "Upcoming") {
-                                  if (apptDate <= startOfToday) return false;
-                                } else if (filterOption === "Custom") {
-                                  if (customStart && customEnd) {
-                                    const start = new Date(customStart + "T00:00:00");
-                                    const end = new Date(customEnd + "T23:59:59");
-                                    if (apptDate < start || apptDate > end) return false;
-                                  }
-                                }
-                                if (searchTerm && searchTerm.trim() !== "") {
-                                  const q = searchTerm.toLowerCase();
-                                  const name = `${appointment.firstName || ""} ${appointment.lastName || ""}`.toLowerCase();
-                                  const phone = (appointment.phone || appointment.mobile || appointment.patientPhone || "").toString().toLowerCase();
-                                  const dateStr = (appointment.appointment_date || "").toString().toLowerCase();
-                                  if (!name.includes(q) && !phone.includes(q) && !dateStr.includes(q)) {
-                                    return false;
-                                  }
-                                }
-                                return true;
-                              } catch (err) {
-                                return true;
+                                const end = new Date(customEnd + "T23:59:59");
+                                if (apptDate < start || apptDate > end)
+                                  return false;
                               }
                             }
-                          );
-                          return filteredAppointments.length > 0 && selectedAppointments.length === filteredAppointments.length;
-                        })()}
-                        onChange={e => {
-                          const filteredAppointments = (appointments || []).filter(
-                            (appointment) => {
-                              try {
-                                const apptDate = new Date(appointment.appointment_date);
-                                const today = new Date();
-                                const startOfToday = new Date(
-                                  today.getFullYear(),
-                                  today.getMonth(),
-                                  today.getDate()
-                                );
-                                if (filterOption === "Today") {
-                                  const apptYmd = apptDate.toISOString().slice(0, 10);
-                                  const todayYmd = startOfToday.toISOString().slice(0, 10);
-                                  if (apptYmd !== todayYmd) return false;
-                                } else if (filterOption === "Old") {
-                                  if (apptDate >= startOfToday) return false;
-                                } else if (filterOption === "Upcoming") {
-                                  if (apptDate <= startOfToday) return false;
-                                } else if (filterOption === "Custom") {
-                                  if (customStart && customEnd) {
-                                    const start = new Date(customStart + "T00:00:00");
-                                    const end = new Date(customEnd + "T23:59:59");
-                                    if (apptDate < start || apptDate > end) return false;
-                                  }
-                                }
-                                if (searchTerm && searchTerm.trim() !== "") {
-                                  const q = searchTerm.toLowerCase();
-                                  const name = `${appointment.firstName || ""} ${appointment.lastName || ""}`.toLowerCase();
-                                  const phone = (appointment.phone || appointment.mobile || appointment.patientPhone || "").toString().toLowerCase();
-                                  const dateStr = (appointment.appointment_date || "").toString().toLowerCase();
-                                  if (!name.includes(q) && !phone.includes(q) && !dateStr.includes(q)) {
-                                    return false;
-                                  }
-                                }
-                                return true;
-                              } catch (err) {
-                                return true;
+                            if (searchTerm && searchTerm.trim() !== "") {
+                              const q = searchTerm.toLowerCase();
+                              const name = `${appointment.firstName || ""} ${
+                                appointment.lastName || ""
+                              }`.toLowerCase();
+                              const phone = (
+                                appointment.phone ||
+                                appointment.mobile ||
+                                appointment.patientPhone ||
+                                ""
+                              )
+                                .toString()
+                                .toLowerCase();
+                              const dateStr = (
+                                appointment.appointment_date || ""
+                              )
+                                .toString()
+                                .toLowerCase();
+                              if (
+                                !name.includes(q) &&
+                                !phone.includes(q) &&
+                                !dateStr.includes(q)
+                              ) {
+                                return false;
                               }
                             }
-                          );
-                          setSelectedAppointments(e.target.checked ? filteredAppointments.map(a => a._id) : []);
-                        }}
-                      />
-                    </th>
+                            return true;
+                          } catch (err) {
+                            return true;
+                          }
+                        });
+                        return (
+                          filteredAppointments.length > 0 &&
+                          selectedAppointments.length ===
+                            filteredAppointments.length
+                        );
+                      })()}
+                      onChange={(e) => {
+                        const filteredAppointments = (
+                          appointments || []
+                        ).filter((appointment) => {
+                          try {
+                            const apptDate = new Date(
+                              appointment.appointment_date
+                            );
+                            const today = new Date();
+                            const startOfToday = new Date(
+                              today.getFullYear(),
+                              today.getMonth(),
+                              today.getDate()
+                            );
+                            if (filterOption === "Today") {
+                              const apptYmd = apptDate
+                                .toISOString()
+                                .slice(0, 10);
+                              const todayYmd = startOfToday
+                                .toISOString()
+                                .slice(0, 10);
+                              if (apptYmd !== todayYmd) return false;
+                            } else if (filterOption === "Old") {
+                              if (apptDate >= startOfToday) return false;
+                            } else if (filterOption === "Upcoming") {
+                              if (apptDate <= startOfToday) return false;
+                            } else if (filterOption === "Custom") {
+                              if (customStart && customEnd) {
+                                const start = new Date(
+                                  customStart + "T00:00:00"
+                                );
+                                const end = new Date(customEnd + "T23:59:59");
+                                if (apptDate < start || apptDate > end)
+                                  return false;
+                              }
+                            }
+                            if (searchTerm && searchTerm.trim() !== "") {
+                              const q = searchTerm.toLowerCase();
+                              const name = `${appointment.firstName || ""} ${
+                                appointment.lastName || ""
+                              }`.toLowerCase();
+                              const phone = (
+                                appointment.phone ||
+                                appointment.mobile ||
+                                appointment.patientPhone ||
+                                ""
+                              )
+                                .toString()
+                                .toLowerCase();
+                              const dateStr = (
+                                appointment.appointment_date || ""
+                              )
+                                .toString()
+                                .toLowerCase();
+                              if (
+                                !name.includes(q) &&
+                                !phone.includes(q) &&
+                                !dateStr.includes(q)
+                              ) {
+                                return false;
+                              }
+                            }
+                            return true;
+                          } catch (err) {
+                            return true;
+                          }
+                        });
+                        setSelectedAppointments(
+                          e.target.checked
+                            ? filteredAppointments.map((a) => a._id)
+                            : []
+                        );
+                      }}
+                    />
+                  </th>
                   <th>Sr. No.</th>
                   <th>Patient Name</th>
                   <th>Appointment Date</th>
@@ -332,7 +404,7 @@ const Dashboard = () => {
                   <th>Visited</th>
                   <th>Booked By</th>
                   <th>Prescription</th>
-                    <th>Actions</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -406,19 +478,26 @@ const Dashboard = () => {
                   return filteredAppointments && filteredAppointments.length > 0
                     ? filteredAppointments.map((appointment) => (
                         <tr key={appointment._id}>
-                            <td>
-                              <input
-                                type="checkbox"
-                                checked={selectedAppointments.includes(appointment._id)}
-                                onChange={() => toggleSelectAppointment(appointment._id)}
-                              />
-                            </td>
+                          <td>
+                            <input
+                              type="checkbox"
+                              checked={selectedAppointments.includes(
+                                appointment._id
+                              )}
+                              onChange={() =>
+                                toggleSelectAppointment(appointment._id)
+                              }
+                            />
+                          </td>
                           <td>{appointments.indexOf(appointment) + 1}</td>
-                          <td>{appointment.name||`${appointment.firstName} ${appointment.lastName}`}</td>
+                          <td>
+                            {appointment.name ||
+                              `${appointment.firstName} ${appointment.lastName}`}
+                          </td>
                           <td>
                             {appointment.appointment_date.substring(0, 16)}
                           </td>
-                          <td>{appointment.bookedBy||"You"}</td>
+                          <td>{appointment.bookedBy || "You"}</td>
                           <td>{appointment.phone || appointment.mobile}</td>
                           <td>{appointment.gender}</td>
                           <td>{appointment.paymentMode || "Cash"}</td>
@@ -481,17 +560,23 @@ const Dashboard = () => {
                               Prescription
                             </button>
                           </td>
-                            <td>
-                              <RequirePermission allowedRoles={["Admin"]}>
+                          <td>
+                            <RequirePermission allowedRoles={["Admin"]}>
                               <button
                                 className="btn remove-btn"
-                                onClick={() => handleDeleteAppointment(appointment._id)}
-                                style={{background:'none',border:'none',color:'#b10c0c'}}
+                                onClick={() =>
+                                  handleDeleteAppointment(appointment._id)
+                                }
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: "#b10c0c",
+                                }}
                               >
                                 <FaTrash />
                               </button>
-                              </RequirePermission>
-                            </td>
+                            </RequirePermission>
+                          </td>
                         </tr>
                       ))
                     : "No Appointments Found!";

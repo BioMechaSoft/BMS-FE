@@ -113,10 +113,11 @@ body {
 }
 
 .dashboard { display:flex; flex-direction:column; gap:1.25rem }
+.dashboard .banner { min-height: fit-content; }
 .dashboard .banner:first-child { height: 35vh; display:flex; gap:1.25rem }
 .dashboard .banner:first-child .firstBox { flex:2; display:flex; align-items:center; border-radius:1.25rem; background:#b5b5ff; padding:1.25rem 1.25rem 0 0.625rem }
 .dashboard .banner:first-child .firstBox img { height:100%; flex:1 }
-.dashboard .banner:first-child .firstBox .content { flex:2 }
+.dashboard .banner:first-child .firstBox .content { flex:2; background-color: transparent; padding: 1.5rem; }
 .dashboard .banner:first-child .firstBox .content div { display:flex; align-items:center; font-size:2.125rem; margin-bottom:0.75rem }
 .dashboard .banner:first-child .firstBox .content div p { margin-right:0.625rem; font-size:2.125rem }
 .dashboard .banner:first-child .firstBox .content div h5 { color:#ff008d }
@@ -133,8 +134,8 @@ body {
 .dashboard .banner:first-child .secondBox p, .dashboard .banner:first-child .thirdBox p { font-size:1.5rem; font-weight:600 }
 .dashboard .banner:first-child .secondBox h3, .dashboard .banner:first-child .thirdBox h3 { font-size:2.125rem; font-weight:700; letter-spacing:2px }
 .dashboard .banner:last-child { min-height:65vh; background:#fff; border-radius:1.25rem; padding:2.5rem }
-.dashboard .banner:last-child h5 { font-size:1.5rem; letter-spacing:2px; margin-bottom:1.25rem; color:#111 }
-.dashboard .banner table { width:100%; color:#111; font-size:1.25rem;  }
+.dashboard .banner:last-child h5 { font-size:1.5rem; letter-spacing:2px; color:#111 }
+.dashboard .banner table { width:100%; color:#111; }
 .dashboard .banner table select { font-size:1.25rem; border:none; width:100%; font-weight:600 }
 .dashboard table td svg{ display:flex; margin:0 auto }
 .dashboard table td .green{ font-size:1.25rem; color:#16a34a }
@@ -242,17 +243,46 @@ body {
 .table-container {
   overflow-x: auto;
 }
+
 .table-banner .heading-box {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 2rem;
 }
-.table-banner .heading-box {
+
+.heading-box .btn-box {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.25rem;
+  gap: 0.5rem;
+}
+@media (max-width:830px) {
+  .dashboard .banner:last-child h5 {
+    letter-spacing: normal;
+  }
+}
+@media (max-width:810px) {
+  .dashboard .banner:last-child h5 {
+    font-size: 1.25rem;
+  }
+  .heading-box .btn-box .btn{
+    /* font-weight: 400; */
+    font-size: 0.7rem;
+  }
+  .dashboard .banner:last-child{
+    padding: 2rem 1rem;
+  }
+}
+@media (max-width:675px) {
+  .heading-box .btn-box{
+    flex-direction: column;
+  }
+}
+@media (max-width:535px) {
+  .table-banner .heading-box{
+    flex-direction: column;
+    gap: 2rem;
+  }
 }
 
 .dashboard .banner table .value-pending {
