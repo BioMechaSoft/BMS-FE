@@ -1,3 +1,8 @@
+.back-btn-box {
+    display: flex;
+    justify-content: flex-start;
+    margin: 1rem auto;
+}
 .appointment-form {
     margin: 1rem auto;
     padding: 2rem;
@@ -32,6 +37,7 @@ form {
 .checkbox-container {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
     padding: 0.5rem;
     padding-left: 0;
@@ -130,7 +136,7 @@ textarea {
 /* ================== Responsive ================== */
 
 @media (min-width: 61.875rem) { /* 990px */
-    .appointment-form {
+    .appointment-form, .back-btn-box {
         width: 80%;
     }
 }
@@ -182,6 +188,9 @@ textarea {
     .has-visited-box .search-container {
         flex-direction: row;
     }  
+    .back-btn-box{
+        justify-content: end;
+    }
 }
 
 @media (max-width: 25.625rem) { /* 410px */
