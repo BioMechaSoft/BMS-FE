@@ -202,6 +202,7 @@ const Prescription = ({ patientId, onClose }) => {
     medicationAdvice,
     dietAdvice,
     originalPayload,
+    followup_date,
   ]);
 
   useEffect(() => {
@@ -1168,6 +1169,19 @@ const Prescription = ({ patientId, onClose }) => {
                     />
                   </div>
                 )}
+                {/* Follow-up Date selector (calendar) */}
+                <div className="form-group">
+                  <label>Follow-up Date</label>
+                  <input
+                    type="date"
+                    value={isIsoDateString(followup_date) ? followup_date : ''}
+                    onChange={(e) => setFollowup_date(e.target.value)}
+                    min={todayISO}
+                  />
+                  {!isIsoDateString(followup_date) && followup_date && (
+                    <div className="muted" style={{ marginTop: 6 }}>Existing follow-up note: {followup_date}</div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1265,6 +1279,9 @@ const Prescription = ({ patientId, onClose }) => {
                           <div>
                             <h4>Medication Advice</h4>
                             <p>{reviewAdvice.medication}</p>
+                            {followup_date && (
+                              <p><strong>Follow-up Date:</strong> {followup_date}</p>
+                            )}
                           </div>
                         )}
                         {reviewAdvice.diet && (
