@@ -10,6 +10,9 @@ import Modal from "react-modal";
 import { FaTrash } from "react-icons/fa";
 import RequirePermission from "./RequirePermission";
 import { MdOutlineContentPasteSearch } from "react-icons/md";
+import { RiCalendarScheduleFill } from "react-icons/ri";
+import { FaEye } from "react-icons/fa";
+import { IoReceipt } from "react-icons/io5";
 // import Doctors from "./Doctors";
 
 const Dashboard = () => {
@@ -495,7 +498,7 @@ const Dashboard = () => {
                               `${appointment.firstName} ${appointment.lastName}`}
                           </td>
                           <td>
-                            {appointment.appointment_date.substring(0, 16)}
+                            {appointment.appointment_date.substring(0, 10)}
                           </td>
                           <td>{appointment.bookedBy || "You"}</td>
                           <td>{appointment.phone || appointment.mobile}</td>
@@ -561,9 +564,11 @@ const Dashboard = () => {
                             </button>
                           </td>
                           <td>
+                            <button style={{background:"none", border:"none", color:"#0859afff"}}><RiCalendarScheduleFill /></button>
+                            <button style={{background:"none", border:"none", color:"#5bbe8eff"}}><FaEye /></button>
+                            <button style={{background:"none", border:"none", color:"#760692ff"}}><IoReceipt /></button>
                             <RequirePermission allowedRoles={["Admin"]}>
                               <button
-                                className="btn remove-btn"
                                 onClick={() =>
                                   handleDeleteAppointment(appointment._id)
                                 }

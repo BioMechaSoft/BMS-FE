@@ -64,7 +64,7 @@ const RoleSettings = () => {
           <button onClick={fetchUsers} style={{ padding: '0.5rem 1rem' }}>Refresh</button>
         </div>
 
-        <div style={{ marginTop: '1.25rem', background: '#fff', padding: '1rem', borderRadius: '8px' }}>
+        <div style={{ marginTop: '1.25rem', background: '#fff', padding: '1rem', borderRadius: '8px', overflowX: 'auto' }}>
           {loading ? (
             <div>Loading users...</div>
           ) : (
