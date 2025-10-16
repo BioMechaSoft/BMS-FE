@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import AutoSuggestInput from "./AutoSuggestInput";
 import useSymptomSuggestions from "./useSymptomSuggestions";
+import useMedicineSuggestions from './useMedicineSuggestions';
 import api from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -16,6 +17,7 @@ const Prescription = ({ patientId, onClose }) => {
   const [bookedBy, setBookedBy] = useState("");
   const [initialComplain, setInitialComplain] = useState("");
   const symptomSuggestions = useSymptomSuggestions();
+  const medHook = useMedicineSuggestions();
   const [medicalHistory, setMedicalHistory] = useState("");
   const [diagnosys, setDiagnosys] = useState({ BP: "", Diabetics: "", SPO2: "", Height: "", Weight: "", Others: "" });
   const [medicineAdvice, setMedicineAdvice] = useState([]);
@@ -512,6 +514,60 @@ const Prescription = ({ patientId, onClose }) => {
 
   if (loading) return <div>Loading...</div>;
 
+  // Build unique lists for smart suggestions (do not break UI)
+  const medicineSuggestions = medHook.medicines || [];
+  const medicineNames = Array.from(new Set(medicineSuggestions.map(m => m.name).filter(Boolean)));
+  const typeSuggestions = Array.from(new Set(medicineSuggestions.map(m => m.type).filter(Boolean)));
+  const doseSuggestions = Array.from(new Set(medicineSuggestions.map(m => m.dose).filter(Boolean)));
+  const freqSuggestions = Array.from(new Set(medicineSuggestions.map(m => m.frequency).filter(Boolean)));
+  const routeSuggestions = Array.from(new Set(medicineSuggestions.map(m => m.route).filter(Boolean)));
+  const durationSuggestions = Array.from(new Set(medicineSuggestions.map(m => m.duration).filter(Boolean)));
+
+  // Handlers to autofill medicine fields when a medicine is selected or Enter is pressed
+  const handleMedicineNameSelect = (idx, name) => {
+    if (!name) return;
+    const med = medHook.findByName ? medHook.findByName(name) : (medicineSuggestions.find(m => (m.name || '').toLowerCase() === (name || '').toLowerCase()));
+    const filled = {
+      name: med?.name || name || '',
+      type: med?.type || '',
+      dose: med?.dose || '',
+      frequency: med?.frequency || '',
+      route: med?.route || '',
+      duration: med?.duration || '',
+    };
+    const copy = [...medicineAdvice];
+    copy[idx] = { ...(copy[idx] || {}), ...filled };
+    setMedicineAdvice(copy);
+    // move focus to Add Medicine button (fast entry)
+    setTimeout(() => {
+      const btn = document.querySelector('.medicine-actions .add-btn');
+      if (btn) btn.focus();
+    }, 40);
+  };
+
+  const handleMedicineNameEnter = (idx) => {
+    const current = (medicineAdvice[idx] && medicineAdvice[idx].name) || '';
+    if (!current) return;
+    // try exact match first, fallback to first contains
+    let med = medHook.findByName ? medHook.findByName(current) : null;
+    if (!med) med = medicineSuggestions.find(m => (m.name || '').toLowerCase().includes(current.toLowerCase()));
+    const filled = {
+      name: med?.name || current || '',
+      type: med?.type || '',
+      dose: med?.dose || '',
+      frequency: med?.frequency || '',
+      route: med?.route || '',
+      duration: med?.duration || '',
+    };
+    const copy = [...medicineAdvice];
+    copy[idx] = { ...(copy[idx] || {}), ...filled };
+    setMedicineAdvice(copy);
+    setTimeout(() => {
+      const btn = document.querySelector('.medicine-actions .add-btn');
+      if (btn) btn.focus();
+    }, 40);
+  };
+
   const nextStep = () => setCurrentStep(s => Math.min(s + 1, steps.length - 1));
   const prevStep = () => setCurrentStep(s => Math.max(s - 1, 0));
   const goToStep = i => setCurrentStep(i);
@@ -587,15 +643,24 @@ const Prescription = ({ patientId, onClose }) => {
                     <label>Medicine Advice</label>
                     <div className="medicines-list">
                       {medicineAdvice.map((m, idx) => (
-                        <div className="medicine-row" key={idx}>
-                          <input placeholder="Name" value={m.name || ''} onChange={e => { const copy = [...medicineAdvice]; copy[idx] = { ...copy[idx], name: e.target.value }; setMedicineAdvice(copy); }} />
-                          <input placeholder="Type" value={m.type || ''} onChange={e => { const copy = [...medicineAdvice]; copy[idx] = { ...copy[idx], type: e.target.value }; setMedicineAdvice(copy); }} />
-                          <input placeholder="Dose" value={m.dose || ''} onChange={e => { const copy = [...medicineAdvice]; copy[idx] = { ...copy[idx], dose: e.target.value }; setMedicineAdvice(copy); }} />
-                          <input placeholder="Frequency" value={m.frequency || ''} onChange={e => { const copy = [...medicineAdvice]; copy[idx] = { ...copy[idx], frequency: e.target.value }; setMedicineAdvice(copy); }} />
-                          <input placeholder="Route" value={m.route || ''} onChange={e => { const copy = [...medicineAdvice]; copy[idx] = { ...copy[idx], route: e.target.value }; setMedicineAdvice(copy); }} />
-                          <input placeholder="Duration" value={m.duration || ''} onChange={e => { const copy = [...medicineAdvice]; copy[idx] = { ...copy[idx], duration: e.target.value }; setMedicineAdvice(copy); }} />
-                          <button type="button" className="remove-btn" onClick={() => { const copy = [...medicineAdvice]; copy.splice(idx, 1); setMedicineAdvice(copy); }}>Remove</button>
-                        </div>
+                        <MedicineRow
+                          key={idx}
+                          index={idx}
+                          value={m}
+                          // update parent row
+                          onChange={(newVal) => { const copy = [...medicineAdvice]; copy[idx] = { ...copy[idx], ...newVal }; setMedicineAdvice(copy); }}
+                          onRemove={() => { const copy = [...medicineAdvice]; copy.splice(idx, 1); setMedicineAdvice(copy); }}
+                          onAdd={() => setMedicineAdvice([...medicineAdvice, { name: '', type: '', dose: '', frequency: '', route: '', duration: '' }])}
+                          // pass central suggestion lists and handlers
+                          medicineNames={medicineNames}
+                          typeSuggestions={typeSuggestions}
+                          doseSuggestions={doseSuggestions}
+                          freqSuggestions={freqSuggestions}
+                          routeSuggestions={routeSuggestions}
+                          durationSuggestions={durationSuggestions}
+                          onSuggestionSelect={(name) => handleMedicineNameSelect(idx, name)}
+                          onSuggestionEnter={() => handleMedicineNameEnter(idx)}
+                        />
                       ))}
                       <div className="medicine-actions">
                         <button type="button" className="add-btn" onClick={() => setMedicineAdvice([...medicineAdvice, { name: '', type: '', dose: '', frequency: '', route: '', duration: '' }])}>Add Medicine</button>
@@ -760,5 +825,85 @@ const Prescription = ({ patientId, onClose }) => {
     // </section>
   );
 };
+
+// MedicineRow: single medicine entry with autosuggest and autofill
+function MedicineRow({ index, value = {}, onChange, onRemove, onAdd, medicineNames = [], typeSuggestions = [], doseSuggestions = [], freqSuggestions = [], routeSuggestions = [], durationSuggestions = [], onSuggestionSelect, onSuggestionEnter }) {
+  const [localName, setLocalName] = useState(value.name || '');
+
+  useEffect(() => { setLocalName(value.name || ''); }, [value.name]);
+
+  const applySuggestion = (name) => {
+    // find suggestion from parent lists
+    const medName = name || localName;
+    // try to find a matching medicine from medHook's data is not available here; parent will handle filling when suggestion is selected
+    const filled = { ...value, name: medName };
+    onChange(filled);
+    // focus add button for quick entry
+    setTimeout(() => {
+      const btn = document.querySelector('.medicine-actions .add-btn');
+      if (btn) btn.focus();
+    }, 40);
+  };
+
+  const handleKey = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (medicineNames && medicineNames.length) {
+        applySuggestion(medicineNames[0]);
+      } else {
+        applySuggestion(localName);
+      }
+    }
+  };
+
+  return (
+    <div className="medicine-row">
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', width: '100%' }}>
+        <div style={{ flex: 2 }}>
+          <AutoSuggestInput
+            placeholder="Name"
+            value={localName}
+            onChange={e => { const v = (e.target && e.target.value) || ''; if (v.includes(',')) return; setLocalName(v); onChange({ ...value, name: v }); }}
+            suggestions={medicineNames}
+            onKeyDown={handleKey}
+            onSelect={(s) => { if (onSuggestionSelect) onSuggestionSelect(s); else applySuggestion(s); }}
+            single
+          />
+        </div>
+        <AutoSuggestInput
+          placeholder="Type"
+          value={value.type || ''}
+          onChange={e => onChange({ ...value, type: e.target.value })}
+          suggestions={typeSuggestions}
+        />
+        <AutoSuggestInput
+          placeholder="Dose"
+          value={value.dose || ''}
+          onChange={e => onChange({ ...value, dose: e.target.value })}
+          suggestions={doseSuggestions}
+        />
+        <AutoSuggestInput
+          placeholder="Frequency"
+          value={value.frequency || ''}
+          onChange={e => onChange({ ...value, frequency: e.target.value })}
+          suggestions={freqSuggestions}
+        />
+        <AutoSuggestInput
+          placeholder="Route"
+          value={value.route || ''}
+          onChange={e => onChange({ ...value, route: e.target.value })}
+          suggestions={routeSuggestions}
+        />
+        <AutoSuggestInput
+          placeholder="Duration"
+          value={value.duration || ''}
+          onChange={e => onChange({ ...value, duration: e.target.value })}
+          suggestions={durationSuggestions}
+        />
+        <button type="button" className="remove-btn" onClick={onRemove}>Remove</button>
+      </div>
+    </div>
+  );
+}
 
 export default Prescription;
