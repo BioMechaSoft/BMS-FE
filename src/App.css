@@ -303,6 +303,7 @@ body {
 .dashboard .banner table thead tr { background-color: #e5e5e5; }
 .dashboard .banner table thead th { padding:12px; min-width: 5rem; border: 1px solid #e5e5e5; text-align: center;}
 .dashboard .banner table tbody td { padding:12px; min-width: 5rem;border: 1px solid #e5e5e5;}
+.dashboard .banner table tbody td:last-child { display: flex; justify-content: center; align-items: center; gap: 0.5rem;}
 @media (max-width: 86rem) { /*1376px*/
   .dashboard .banner:first-child .firstBox .content div, .dashboard .banner:first-child .firstBox .content div p { font-size:1.625rem }
   .dashboard .banner:first-child .firstBox .content p { font-size:0.875rem }
