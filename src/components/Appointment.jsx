@@ -831,6 +831,7 @@ const Appointment = () => {
           </form>
         </div>
       </section>
+     {/* change into jsx page instead of model?? */}
       <Modal
         isOpen={showInvoicePreview}
         onRequestClose={() => setShowInvoicePreview(false)}

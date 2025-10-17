@@ -539,7 +539,7 @@ const Dashboard = () => {
                           <td>
                             {appointment.appointment_date.substring(0, 10)}
                           </td>
-                          <td>{appointment.bookedBy || "You"}</td>
+                          <td>{appointment?.booked_by || "You"}</td>
                           <td>{appointment.phone || appointment.mobile}</td>
                           <td>{appointment.gender}</td>
                           <td>{appointment.paymentMode || "Cash"}</td>
@@ -588,8 +588,8 @@ const Dashboard = () => {
                             )}
                           </td>
                           <td>
-                            {appointment.bookedBy
-                              ? appointment.bookedBy
+                            {appointment.book_by_name
+                              ? appointment.book_by_name
                               : appointment.patientId || "-"}
                           </td>
                           <td>

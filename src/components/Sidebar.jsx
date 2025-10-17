@@ -24,6 +24,10 @@ const Sidebar = () => {
   const handleLogout = async () => {
     try {
       const res = await api.get(`/api/v1/user/admin/logout`);
+      // Clear all cookies
+      document.cookie.split(';').forEach((c) => {
+        document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date(0).toUTCString() + ';path=/');
+      });
       toast.success(res.data.message);
       setIsAuthenticated(false);
     } catch (err) {
