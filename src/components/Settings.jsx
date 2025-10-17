@@ -31,6 +31,13 @@ const settings = [
     description: "Configure advanced options and system preferences.",
     route: "/settings/advanced",
   },
+  {
+    id: "invoices",
+    name: "Invoice Settings",
+    icon: "🧾",
+    description: "Create, edit and manage invoices.",
+    route: "/settings/invoices",
+  }
 ];
 
 const Settings = () => {

@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState, useMemo } from "react";
+import InvoiceViewer from './InvoiceViewer';
 import { Context } from "../main";
 import { Navigate, useNavigate } from "react-router-dom";
 import api from "../utils/api";
@@ -28,6 +29,8 @@ const Dashboard = () => {
   const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [selectedPatientData, setSelectedPatientData] = useState(null);
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [activeInvoice, setActiveInvoice] = useState(null);
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -116,6 +119,42 @@ const Dashboard = () => {
       toast.success(data.message);
     } catch (error) {
       toast.error(error.response.data.message);
+    }
+  };
+
+  const [invoicesList, setInvoicesList] = useState([]);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
+  const [showInvoicesModal, setShowInvoicesModal] = useState(false);
+
+  const handleInvoiceClick = async (appointmentId) => {
+    try {
+      const { data } = await api.get(`/api/v1/invoice/appointment/${appointmentId}`);
+      console.log('Invoice API response:', data);
+      let invoices = [];
+      if (Array.isArray(data.invoices)) {
+        invoices = data.invoices;
+      } else if (Array.isArray(data.invoice)) {
+        invoices = data.invoice;
+      } else if (data.invoices) {
+        invoices = [data.invoices];
+      } else if (data.invoice) {
+        invoices = [data.invoice];
+      } else if (Array.isArray(data)) {
+        invoices = data;
+      } else if (data && data._id) {
+        invoices = [data];
+      }
+      console.log('Extracted invoices:', invoices);
+      if (!invoices || invoices.length === 0) {
+        toast.info('No invoice found for this appointment');
+        return;
+      }
+      setInvoicesList(invoices);
+      setShowInvoicesModal(true);
+      setSelectedInvoiceId(null);
+    } catch (e) {
+      console.error('Invoice fetch failed', e);
+      toast.error('Failed to fetch invoice for appointment');
     }
   };
 
@@ -564,9 +603,10 @@ const Dashboard = () => {
                             </button>
                           </td>
                           <td>
+                            {/* TODO:functionalities need to be implemented */}
                             <button style={{background:"none", border:"none", color:"#0859afff"}}><RiCalendarScheduleFill /></button>
                             <button style={{background:"none", border:"none", color:"#5bbe8eff"}}><FaEye /></button>
-                            <button style={{background:"none", border:"none", color:"#760692ff"}}><IoReceipt /></button>
+                            <button style={{background:"none", border:"none", color:"#760692ff"}} onClick={()=>handleInvoiceClick(appointment._id)}><IoReceipt /></button>
                             <RequirePermission allowedRoles={["Admin"]}>
                               <button
                                 onClick={() =>
@@ -590,6 +630,32 @@ const Dashboard = () => {
             </table>
           </div>
 
+          {/* Invoice selection modal for multiple invoices - only opens on IoReceipt click */}
+          <Modal
+            isOpen={showInvoicesModal}
+            onRequestClose={() => { setShowInvoicesModal(false); setInvoicesList([]); setSelectedInvoiceId(null); }}
+            contentLabel="Invoices Modal"
+            ariaHideApp={false}
+            style={{ content: { maxWidth: "600px", margin: "auto" } }}
+          >
+            <h3>Invoices for Appointment</h3>
+            <div>
+              {invoicesList.map((inv, idx) => (
+                <div key={inv._id || inv.id} style={{ marginBottom: 10, borderBottom: '1px solid #eee', paddingBottom: 8 }}>
+                  <div><b>Invoice #:</b> {inv.invoiceNumber || inv._id || inv.id}</div>
+                  <div><b>Date:</b> {inv.issuedAt ? String(inv.issuedAt).substring(0,10) : (inv.date ? String(inv.date).substring(0,10) : '-')}</div>
+                  <div><b>Total:</b> {inv.total || inv.subtotal || 0}</div>
+                  <button className="btn btn-primary" style={{ marginRight: 8 }} onClick={() => setSelectedInvoiceId(inv._id || inv.id)}>View</button>
+                  <button className="btn" onClick={() => window.open(`/invoice/${inv._id || inv.id}`, '_blank')}>Open Full Page</button>
+                </div>
+              ))}
+            </div>
+            <button className="btn" style={{ marginTop: 12 }} onClick={() => { setShowInvoicesModal(false); setInvoicesList([]); setSelectedInvoiceId(null); }}>Close</button>
+            {/* InvoiceViewer for selected invoice inside modal */}
+            <InvoiceViewer invoiceId={selectedInvoiceId} isOpen={!!selectedInvoiceId} onClose={() => setSelectedInvoiceId(null)} />
+          </Modal>
+
+          {/* Prescription modal - only for prescription */}
           <Modal
             isOpen={prescriptionModalOpen}
             onRequestClose={closePrescriptionModal}
@@ -603,21 +669,6 @@ const Dashboard = () => {
               onClose={closePrescriptionModal}
             />
           </Modal>
-          <Modal
-            isOpen={prescriptionModalOpen}
-            onRequestClose={closePrescriptionModal}
-            contentLabel="Prescription Modal"
-            ariaHideApp={false}
-            style={{ content: { maxWidth: "100%", margin: "auto" } }}
-          >
-            <Prescription
-              patientId={selectedPatientId}
-              patientData={selectedPatientData}
-              onClose={closePrescriptionModal}
-            />
-          </Modal>
-
-          {}
         </div>
       </section>
     </>

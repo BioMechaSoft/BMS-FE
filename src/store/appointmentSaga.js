@@ -19,6 +19,7 @@ function* createAppointmentSaga(action) {
       const data = response.data;
       yield put(createAppointmentSuccess(data));
       toast.success(data.message || 'Appointment created');
+      // Invoice creation is handled by the backend now; no client-side auto-create.
     }
   } catch (err) {
     const msg = err?.response?.data?.message || err.message || 'Appointment failed';

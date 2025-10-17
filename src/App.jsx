@@ -26,6 +26,8 @@ import RoleSettings from "./components/RoleSettings";
 import ThemeSettings from "./components/ThemeSettings";
 import AdvancedSettings from "./components/AdvancedSettings";
 import RequireAuth from "./components/RequireAuth";
+import InvoiceSettings from "./components/InvoiceSettings";
+import InvoicePage from "./components/InvoicePage";
 
 const App = () => {
   const { isAuthenticated, setIsAuthenticated, admin, setAdmin } =
@@ -91,6 +93,11 @@ const App = () => {
             <MedicineSettings />
           </RequireAuth>
         } />
+        <Route path="/settings/invoices" element={
+          <RequireAuth allowedRoles={["Admin","Doctor","Compounder"]}>
+            <InvoiceSettings />
+          </RequireAuth>
+        } />
         <Route path="/settings/roles" element={
           <RequireAuth allowedRoles={["Admin"]}>
             <RoleSettings />
@@ -107,6 +114,7 @@ const App = () => {
           </RequireAuth>
         } />
         <Route path="/preview/:patientId" element={<Preview />} />
+        <Route path="/invoice/:invoiceId" element={<InvoicePage />} />
       </Routes>
       <ToastContainer position="top-center" />
     </Router>
