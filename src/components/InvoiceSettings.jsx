@@ -67,7 +67,7 @@ const InvoiceSettings = () => {
   const stats = useMemo(()=>({}), []);
 
   return (
-    <section className="page settings-page">
+    <section className="page">
       <div className="settings-header">
         <h2>Invoice Settings</h2>
         <p>Manage invoices: create, search, edit, delete and view stats.</p>
@@ -81,8 +81,8 @@ const InvoiceSettings = () => {
             <input placeholder="Appointment ID (optional)" value={form.appointment} onChange={e=>setForm({...form, appointment: e.target.value})} />
             <input placeholder="Doctor ID (optional)" value={form.doctor} onChange={e=>setForm({...form, doctor: e.target.value})} />
             <textarea placeholder="Items JSON" value={JSON.stringify(form.items)} onChange={e=>{ try { setForm({...form, items: JSON.parse(e.target.value)}); } catch(err){} }} rows={4} />
-            <div style={{ display:'flex', gap:8 }}>
-              <input placeholder="Due Date" value={form.dueDate} onChange={e=>setForm({...form, dueDate: e.target.value})} />
+            <div style={{ display:'grid',gridTemplateColumns:'150px 100px 100px', gap:8, width:'100%' }}>
+              <input placeholder="Due Date" type='date' value={form.dueDate} onChange={e=>setForm({...form, dueDate: e.target.value})} />
               <input placeholder="Tax" value={form.tax} onChange={e=>setForm({...form, tax: Number(e.target.value)})} />
               <input placeholder="Discount" value={form.discount} onChange={e=>setForm({...form, discount: Number(e.target.value)})} />
             </div>

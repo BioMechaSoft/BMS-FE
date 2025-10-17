@@ -603,24 +603,26 @@ const Dashboard = () => {
                             </button>
                           </td>
                           <td>
-                            {/* TODO:functionalities need to be implemented */}
-                            <button style={{background:"none", border:"none", color:"#0859afff"}}><RiCalendarScheduleFill /></button>
-                            <button style={{background:"none", border:"none", color:"#5bbe8eff"}}><FaEye /></button>
-                            <button style={{background:"none", border:"none", color:"#760692ff"}} onClick={()=>handleInvoiceClick(appointment._id)}><IoReceipt /></button>
-                            <RequirePermission allowedRoles={["Admin"]}>
-                              <button
-                                onClick={() =>
-                                  handleDeleteAppointment(appointment._id)
-                                }
-                                style={{
-                                  background: "none",
-                                  border: "none",
-                                  color: "#b10c0c",
-                                }}
-                              >
-                                <FaTrash />
-                              </button>
-                            </RequirePermission>
+                            <div className="td-btn-container">
+                              {/* TODO:functionalities need to be implemented */}
+                              <button style={{background:"none", border:"none", color:"#0859afff"}}><RiCalendarScheduleFill /></button>
+                              <button style={{background:"none", border:"none", color:"#5bbe8eff"}}><FaEye /></button>
+                              <button style={{background:"none", border:"none", color:"#760692ff"}} onClick={()=>handleInvoiceClick(appointment._id)}><IoReceipt /></button>
+                              <RequirePermission allowedRoles={["Admin"]}>
+                                <button
+                                  onClick={() =>
+                                    handleDeleteAppointment(appointment._id)
+                                  }
+                                  style={{
+                                    background: "none",
+                                    border: "none",
+                                    color: "#b10c0c",
+                                  }}
+                                >
+                                  <FaTrash />
+                                </button>
+                              </RequirePermission>
+                            </div>
                           </td>
                         </tr>
                       ))
