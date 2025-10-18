@@ -4,7 +4,7 @@ import api from "../utils/api";
 import Modal from "react-modal";
 // @ts-ignore
 import jsPDF from "jspdf";
-import { dobToAge, ageToDob } from "../utils/ageUtils";
+import { dobToAge, dobToAgeParts, formatAge, ageToDob } from "../utils/ageUtils";
 import { makeNIC } from "../utils/nicMaker.js";
 import { toast } from "react-toastify";
 import "./Appointment.css";
@@ -13,11 +13,13 @@ import { useNavigate } from "react-router-dom";
 const Appointment = () => {
   const navigate = useNavigate();
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  // const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [nic, setNic] = useState("");
   const [dob, setDob] = useState("");
-  const [age, setAge] = useState("");
+  const [ageYears, setAgeYears] = useState("");
+  const [ageMonths, setAgeMonths] = useState("");
+  const [ageDays, setAgeDays] = useState("");
   const [gender, setGender] = useState("");
   const [appointmentDate, setAppointmentDate] = useState("");
   const [department, setDepartment] = useState("Pediatrics");
@@ -308,11 +310,12 @@ const Appointment = () => {
         firstName: firstName,
         lastName: lastName || "Not Confirmed",
         name,
-        email: email || undefined,
+        // email: email || undefined,
         phone,
         nic: nic || undefined,
         dob: dob || undefined,
-        age: age || undefined,
+  // send numeric years for backend compatibility; prefer ageYears then fallback to undefined
+  age: ageYears !== "" && ageYears !== null && ageYears !== undefined ? Number(ageYears) : undefined,
         gender,
         appointment_date: appointmentDate
           ? new Date(appointmentDate).toISOString()
@@ -360,11 +363,13 @@ const Appointment = () => {
   useEffect(() => {
     if (appointmentState && appointmentState.lastCreated) {
       setName("");
-      setEmail("");
+      // setEmail("");
       setPhone("");
       setNic("");
-      setDob("");
-      setAge("");
+  setDob("");
+  setAgeYears("");
+  setAgeMonths("");
+  setAgeDays("");
       setGender("");
       setAppointmentDate("");
       setDepartment("Pediatrics");
@@ -396,11 +401,24 @@ const Appointment = () => {
         setName(
           appt.name || `${appt.firstName || ""} ${appt.lastName || ""}`.trim()
         );
-        setEmail(appt.email || "");
+        // setEmail(appt.email || "");
         setPhone(appt.phone || "");
         setNic(appt.nic || "");
-        if (appt.dob) setDob(new Date(appt.dob).toISOString().slice(0, 10));
-        if (appt.age) setAge(appt.age);
+        if (appt.dob) {
+          const iso = new Date(appt.dob).toISOString().slice(0, 10);
+          setDob(iso);
+          const parts = dobToAgeParts(iso);
+          if (parts) {
+            setAgeYears(parts.years);
+            setAgeMonths(parts.months);
+            setAgeDays(parts.days);
+          }
+        } else if (appt.age) {
+          // if only numeric age is available, set years and clear months/days
+          setAgeYears(appt.age);
+          setAgeMonths("");
+          setAgeDays("");
+        }
         setAddress(appt.address || "");
         setDepartment(appt.department || department);
         if (appt.doctorId) set_id(appt.doctorId);
@@ -499,29 +517,89 @@ const Appointment = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                   />
-                  <input
-                    type="number"
-                    placeholder="Age"
-                    value={age}
-                    onChange={(e) => {
-                      setAge(e.target.value);
-                      if (e.target.value) {
-                        const now = new Date();
-                        const y = now.getFullYear() - Number(e.target.value);
-                        const mm = String(now.getMonth() + 1).padStart(2, "0");
-                        const dd = String(now.getDate()).padStart(2, "0");
-                        setDob(`${y}-${mm}-${dd}`);
-                      }
-                    }}
-                  />
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <input
+                      type="number"
+                      placeholder="Years"
+                      min={0}
+                      value={ageYears}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/[^0-9]/g, '');
+                        setAgeYears(v);
+                        // compute DOB from parts
+                        const y = Number(v) || 0;
+                        const m = Number(ageMonths) || 0;
+                        const d = Number(ageDays) || 0;
+                        const computed = (() => {
+                          // subtract y/m/d from today
+                          const dt = new Date();
+                          dt.setFullYear(dt.getFullYear() - y);
+                          // subtract months
+                          const month = dt.getMonth() - m;
+                          dt.setMonth(month);
+                          // subtract days
+                          dt.setDate(dt.getDate() - d);
+                          dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+                          return dt.toISOString().slice(0,10);
+                        })();
+                        setDob(computed);
+                      }}
+                      style={{ width: '6rem' }}
+                    />
+                    <span>year</span>
+                    <input
+                      type="number"
+                      placeholder="Months"
+                      min={0}
+                      max={11}
+                      value={ageMonths}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/[^0-9]/g, '');
+                        setAgeMonths(v);
+                        const y = Number(ageYears) || 0;
+                        const m = Number(v) || 0;
+                        const d = Number(ageDays) || 0;
+                        const dt = new Date();
+                        dt.setFullYear(dt.getFullYear() - y);
+                        dt.setMonth(dt.getMonth() - m);
+                        dt.setDate(dt.getDate() - d);
+                        dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+                        setDob(dt.toISOString().slice(0,10));
+                      }}
+                      style={{ width: '6rem' }}
+                    />
+                    <span>month</span>
+                    <input
+                      type="number"
+                      placeholder="Days"
+                      min={0}
+                      max={31}
+                      value={ageDays}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/[^0-9]/g, '');
+                        setAgeDays(v);
+                        const y = Number(ageYears) || 0;
+                        const m = Number(ageMonths) || 0;
+                        const d = Number(v) || 0;
+                        const dt = new Date();
+                        dt.setFullYear(dt.getFullYear() - y);
+                        dt.setMonth(dt.getMonth() - m);
+                        dt.setDate(dt.getDate() - d);
+                        dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+                        setDob(dt.toISOString().slice(0,10));
+                      }}
+                      style={{ width: '6rem' }}
+                    />
+                    <span>days</span>
+                  </div>
                 </div>
                 <div className="lnr-input-box">
-                  <input
+                  {/* <input
                     type="text"
                     placeholder="Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                  />
+                  /> */}
                   <input
                     type="number"
                     placeholder="Mobile Number"
@@ -568,8 +646,19 @@ const Appointment = () => {
                     value={dob}
                     onChange={(e) => {
                       const v = e.target.value;
-                      setDob(v && v > todayStr ? todayStr : v);
-                      setAge(dobToAge(e.target.value));
+                      const safe = v && v > todayStr ? todayStr : v;
+                      setDob(safe);
+                      // set age parts from DOB
+                      const parts = dobToAgeParts(safe);
+                      if (parts) {
+                        setAgeYears(parts.years);
+                        setAgeMonths(parts.months);
+                        setAgeDays(parts.days);
+                      } else {
+                        setAgeYears("");
+                        setAgeMonths("");
+                        setAgeDays("");
+                      }
                     }}
                   />
                   <input
@@ -871,10 +960,15 @@ const Appointment = () => {
             marginTop: "1rem",
           }}
         >
-          <div style={{ flex: 1 }}>
+            <div style={{ flex: 1 }}>
             <h3>Patient Info</h3>
             <div>Name: {name}</div>
-            <div>Age: {age}</div>
+            <div>
+              Age: {
+                // prefer DOB-based formatted age when DOB is available, otherwise show numeric years
+                dob ? formatAge(dobToAgeParts(dob)) : (ageYears ? `${ageYears} years` : "")
+              }
+            </div>
             <div>
               Address:{" "}
               <input
@@ -973,7 +1067,7 @@ const Appointment = () => {
               doc.addImage("/logo.png", "PNG", 160, 10, 30, 30);
               doc.setFontSize(12);
               doc.text(`Patient Name: ${name}`, 20, 40);
-              doc.text(`Age: ${dobToAge(dob)}`, 20, 48);
+              doc.text(`Age: ${dob ? dobToAge(dob) : (ageYears ? `${ageYears} years` : "")}`, 20, 48);
               doc.text(`Address: ${invoiceFields.address}`, 20, 56);
               doc.text(`Doctor: ${doctorFirstName} ${doctorLastName}`, 120, 40);
               doc.text(`Department: ${department}`, 120, 48);

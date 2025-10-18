@@ -11,6 +11,7 @@ import Appoinment from "./components/Appointment"
 import AddNewDoctor from "./components/AddNewDoctor";
 import Messages from "./components/Messages";
 import Doctors from "./components/Doctors";
+import Compounders from "./components/Compounders";
 import { Context } from "./main";
 import api from "./utils/api";
 import { ToastContainer } from "react-toastify";
@@ -82,6 +83,11 @@ const App = () => {
         <Route path="/doctors" element={
           <RequireAuth allowedRoles={["Admin","Doctor"]}>
             <Doctors />
+          </RequireAuth>
+        } />
+        <Route path="/compounders" element={
+          <RequireAuth allowedRoles={["Admin","Doctor"]}>
+            <Compounders />
           </RequireAuth>
         } />
         <Route path="/settings" element={

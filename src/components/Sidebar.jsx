@@ -5,7 +5,7 @@ import { AiFillMessage } from "react-icons/ai";
 import { BiBarChart } from "react-icons/bi";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { FaUserDoctor } from "react-icons/fa6";
-import { MdAddModerator } from "react-icons/md";
+import { FaUserNurse, FaUserPlus } from "react-icons/fa";
 import { IoPersonAddSharp } from "react-icons/io5";
 // import { FaPrescription } from "react-icons/fa6";
 import { FiSettings } from "react-icons/fi";
@@ -62,6 +62,10 @@ const Sidebar = () => {
     navigateTo("/admin/addnew");
     setShow(!show);
   };
+  const gotoCompoundersPage = () => {
+    navigateTo('/compounders');
+    setShow(!show);
+  }
   // const prescriptionPage = () => {
   //   navigateTo("/prescription");
   // }
@@ -82,7 +86,10 @@ const Sidebar = () => {
           {(role === 'Admin' || role === 'Doctor') && <FaUserDoctor onClick={gotoDoctorsPage} />}
           {/* Admin and Doctor can create compounder */}
           {(role === 'Admin' || role === 'Doctor') && (
-            <MdAddModerator onClick={gotoAddNewAdmin} />
+            <>
+              <FaUserPlus onClick={gotoAddNewAdmin} title="Create Compounder" />
+              <FaUserNurse onClick={gotoCompoundersPage} title="Compounders" />
+            </>
           )}
           {/* Only Admin can add new doctors */}
           {role === 'Admin' && <IoPersonAddSharp onClick={gotoAddNewDoctor} />}

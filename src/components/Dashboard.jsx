@@ -52,7 +52,7 @@ const Dashboard = () => {
   const handleUpdatePaymentStatus = async (appointmentId, paymentStatus) => {
     try {
       // send only paymentStatus and let backend harmonize status/payment according to rules
-      const body = { paymentStatus };
+  const body = { paymentStatus };
       const { data } = await api.put(`/api/v1/appointment/status/${appointmentId}`, body);
       const updated = data.appointment || null;
       if (updated) {
@@ -128,7 +128,8 @@ const Dashboard = () => {
   const handleUpdateStatus = async (appointmentId, status) => {
     try {
       // Let backend enforce rules. When requesting Completed, backend will ensure paymentStatus is Paid.
-      const body = { status };
+      // If requesting Completed from UI, include paymentStatus: 'Paid' so harmonizeStatusPayment accepts Completed
+      const body = status === 'Completed' ? { status, paymentStatus: 'Paid' } : { status };
       const { data } = await api.put(`/api/v1/appointment/status/${appointmentId}`, body);
       const updatedAppt = data.appointment || null;
       if (updatedAppt) {
@@ -499,7 +500,7 @@ const Dashboard = () => {
                           <td>{appointment.phone || appointment.mobile}</td>
                           <td>{appointment.gender}</td>
                           <td>{appointment.paymentMode || "Cash"}</td>
-                          <td>{appointment.feesAmount || "0"}</td>
+                          <td>{appointment.price || appointment.feesAmount || "0"}</td>
                           <td>
                             <select value={appointment.paymentStatus || 'Pending'} onChange={(e) => handleUpdatePaymentStatus(appointment._id, e.target.value)}>
                               <option value="Pending">Pending</option>

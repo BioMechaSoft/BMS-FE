@@ -6,6 +6,7 @@ import html2canvas from 'html2canvas';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchPreviewRequest, resetPreview } from '../store/previewSlice';
+import { dobToAge } from '../utils/ageUtils';
 import { Context } from '../main';
 
 // Helper: format date
@@ -134,7 +135,9 @@ const Preview = () => {
                                             {patient.email && <p><strong>Email:</strong> {patient.email}</p>}
                                             {patient.phone && <p><strong>Phone:</strong> {patient.phone}</p>}
                                             {patient.gender && <p><strong>Gender:</strong> {patient.gender}</p>}
-                                            {patient.dob && <p><strong>DOB:</strong> {formatDate(patient.dob)}</p>}
+                                            {(patient.dob || patient.age) && (
+                                                <p><strong>Age:</strong> {patient.dob ? dobToAge(patient.dob) : (patient.age ? `${patient.age} years` : '')}</p>
+                                            )}
                                             {patient.address && <p><strong>Address:</strong> {patient.address}</p>}
                                         </div>
                                         <div className="rightCol">
