@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState, useMemo } from "react";
-import InvoiceViewer from './InvoiceViewer';
+import InvoiceViewer from "./InvoiceViewer";
 import { Context } from "../main";
 import { Navigate, useNavigate } from "react-router-dom";
 import api from "../utils/api";
@@ -19,7 +19,7 @@ import { IoReceipt } from "react-icons/io5";
 const Dashboard = () => {
   const [appointments, setAppointments] = useState([]);
   const [selectedAppointments, setSelectedAppointments] = useState([]);
-  const [filterOption, setFilterOption] = useState("All");
+  const [filterOption, setFilterOption] = useState("Today");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -128,8 +128,10 @@ const Dashboard = () => {
 
   const handleInvoiceClick = async (appointmentId) => {
     try {
-      const { data } = await api.get(`/api/v1/invoice/appointment/${appointmentId}`);
-      console.log('Invoice API response:', data);
+      const { data } = await api.get(
+        `/api/v1/invoice/appointment/${appointmentId}`
+      );
+      console.log("Invoice API response:", data);
       let invoices = [];
       if (Array.isArray(data.invoices)) {
         invoices = data.invoices;
@@ -144,17 +146,17 @@ const Dashboard = () => {
       } else if (data && data._id) {
         invoices = [data];
       }
-      console.log('Extracted invoices:', invoices);
+      console.log("Extracted invoices:", invoices);
       if (!invoices || invoices.length === 0) {
-        toast.info('No invoice found for this appointment');
+        toast.info("No invoice found for this appointment");
         return;
       }
       setInvoicesList(invoices);
       setShowInvoicesModal(true);
       setSelectedInvoiceId(null);
     } catch (e) {
-      console.error('Invoice fetch failed', e);
-      toast.error('Failed to fetch invoice for appointment');
+      console.error("Invoice fetch failed", e);
+      toast.error("Failed to fetch invoice for appointment");
     }
   };
 
@@ -284,79 +286,6 @@ const Dashboard = () => {
                   <th>
                     <input
                       type="checkbox"
-                      checked={(() => {
-                        const filteredAppointments = (
-                          appointments || []
-                        ).filter((appointment) => {
-                          try {
-                            const apptDate = new Date(
-                              appointment.appointment_date
-                            );
-                            const today = new Date();
-                            const startOfToday = new Date(
-                              today.getFullYear(),
-                              today.getMonth(),
-                              today.getDate()
-                            );
-                            if (filterOption === "Today") {
-                              const apptYmd = apptDate
-                                .toISOString()
-                                .slice(0, 10);
-                              const todayYmd = startOfToday
-                                .toISOString()
-                                .slice(0, 10);
-                              if (apptYmd !== todayYmd) return false;
-                            } else if (filterOption === "Old") {
-                              if (apptDate >= startOfToday) return false;
-                            } else if (filterOption === "Upcoming") {
-                              if (apptDate <= startOfToday) return false;
-                            } else if (filterOption === "Custom") {
-                              if (customStart && customEnd) {
-                                const start = new Date(
-                                  customStart + "T00:00:00"
-                                );
-                                const end = new Date(customEnd + "T23:59:59");
-                                if (apptDate < start || apptDate > end)
-                                  return false;
-                              }
-                            }
-                            if (searchTerm && searchTerm.trim() !== "") {
-                              const q = searchTerm.toLowerCase();
-                              const name = `${appointment.firstName || ""} ${
-                                appointment.lastName || ""
-                              }`.toLowerCase();
-                              const phone = (
-                                appointment.phone ||
-                                appointment.mobile ||
-                                appointment.patientPhone ||
-                                ""
-                              )
-                                .toString()
-                                .toLowerCase();
-                              const dateStr = (
-                                appointment.appointment_date || ""
-                              )
-                                .toString()
-                                .toLowerCase();
-                              if (
-                                !name.includes(q) &&
-                                !phone.includes(q) &&
-                                !dateStr.includes(q)
-                              ) {
-                                return false;
-                              }
-                            }
-                            return true;
-                          } catch (err) {
-                            return true;
-                          }
-                        });
-                        return (
-                          filteredAppointments.length > 0 &&
-                          selectedAppointments.length ===
-                            filteredAppointments.length
-                        );
-                      })()}
                       onChange={(e) => {
                         const filteredAppointments = (
                           appointments || []
@@ -365,24 +294,23 @@ const Dashboard = () => {
                             const apptDate = new Date(
                               appointment.appointment_date
                             );
+                            const apptYmd = apptDate.toLocaleDateString("en-CA")
                             const today = new Date();
                             const startOfToday = new Date(
                               today.getFullYear(),
                               today.getMonth(),
                               today.getDate()
                             );
+                            const todayYmd = startOfToday.toLocaleDateString("en-CA");
+
+                            // Filter by dropdown
                             if (filterOption === "Today") {
-                              const apptYmd = apptDate
-                                .toISOString()
-                                .slice(0, 10);
-                              const todayYmd = startOfToday
-                                .toISOString()
-                                .slice(0, 10);
                               if (apptYmd !== todayYmd) return false;
                             } else if (filterOption === "Old") {
-                              if (apptDate >= startOfToday) return false;
+                              if (apptYmd >= todayYmd) return false;
                             } else if (filterOption === "Upcoming") {
-                              if (apptDate <= startOfToday) return false;
+                              // future (strictly greater than today)
+                              if (apptYmd <= todayYmd) return false;
                             } else if (filterOption === "Custom") {
                               if (customStart && customEnd) {
                                 const start = new Date(
@@ -393,11 +321,16 @@ const Dashboard = () => {
                                   return false;
                               }
                             }
+
+                            // Search term across name, phone and date
                             if (searchTerm && searchTerm.trim() !== "") {
                               const q = searchTerm.toLowerCase();
-                              const name = `${appointment.firstName || ""} ${
-                                appointment.lastName || ""
-                              }`.toLowerCase();
+                              const name = (
+                                appointment.name ||
+                                `${appointment.firstName || ""} ${
+                                  appointment.lastName || ""
+                                }`
+                              ).toLowerCase();
                               const phone = (
                                 appointment.phone ||
                                 appointment.mobile ||
@@ -419,6 +352,7 @@ const Dashboard = () => {
                                 return false;
                               }
                             }
+
                             return true;
                           } catch (err) {
                             return true;
@@ -456,25 +390,23 @@ const Dashboard = () => {
                     (appointment) => {
                       try {
                         const apptDate = new Date(appointment.appointment_date);
+                        const apptYmd = apptDate.toLocaleDateString("en-CA");
                         const today = new Date();
                         const startOfToday = new Date(
                           today.getFullYear(),
                           today.getMonth(),
                           today.getDate()
                         );
+                        const todayYmd = startOfToday.toLocaleDateString("en-CA");
 
                         // Filter by dropdown
                         if (filterOption === "Today") {
-                          const apptYmd = apptDate.toISOString().slice(0, 10);
-                          const todayYmd = startOfToday
-                            .toISOString()
-                            .slice(0, 10);
                           if (apptYmd !== todayYmd) return false;
                         } else if (filterOption === "Old") {
-                          if (apptDate >= startOfToday) return false;
+                          if (apptYmd >= todayYmd) return false;
                         } else if (filterOption === "Upcoming") {
                           // future (strictly greater than today)
-                          if (apptDate <= startOfToday) return false;
+                          if (apptYmd <= todayYmd) return false;
                         } else if (filterOption === "Custom") {
                           if (customStart && customEnd) {
                             const start = new Date(customStart + "T00:00:00");
@@ -487,9 +419,12 @@ const Dashboard = () => {
                         // Search term across name, phone and date
                         if (searchTerm && searchTerm.trim() !== "") {
                           const q = searchTerm.toLowerCase();
-                          const name = `${appointment.firstName || ""} ${
-                            appointment.lastName || ""
-                          }`.toLowerCase();
+                          const name = (
+                            appointment.name ||
+                            `${appointment.firstName || ""} ${
+                              appointment.lastName || ""
+                            }`
+                          ).toLowerCase();
                           const phone = (
                             appointment.phone ||
                             appointment.mobile ||
@@ -605,9 +540,36 @@ const Dashboard = () => {
                           <td>
                             <div className="td-btn-container">
                               {/* TODO:functionalities need to be implemented */}
-                              <button style={{background:"none", border:"none", color:"#0859afff"}}><RiCalendarScheduleFill /></button>
-                              <button style={{background:"none", border:"none", color:"#5bbe8eff"}}><FaEye /></button>
-                              <button style={{background:"none", border:"none", color:"#760692ff"}} onClick={()=>handleInvoiceClick(appointment._id)}><IoReceipt /></button>
+                              <button
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: "#0859afff",
+                                }}
+                              >
+                                <RiCalendarScheduleFill />
+                              </button>
+                              <button
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: "#5bbe8eff",
+                                }}
+                              >
+                                <FaEye />
+                              </button>
+                              <button
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: "#760692ff",
+                                }}
+                                onClick={() =>
+                                  handleInvoiceClick(appointment._id)
+                                }
+                              >
+                                <IoReceipt />
+                              </button>
                               <RequirePermission allowedRoles={["Admin"]}>
                                 <button
                                   onClick={() =>
@@ -635,7 +597,11 @@ const Dashboard = () => {
           {/* Invoice selection modal for multiple invoices - only opens on IoReceipt click */}
           <Modal
             isOpen={showInvoicesModal}
-            onRequestClose={() => { setShowInvoicesModal(false); setInvoicesList([]); setSelectedInvoiceId(null); }}
+            onRequestClose={() => {
+              setShowInvoicesModal(false);
+              setInvoicesList([]);
+              setSelectedInvoiceId(null);
+            }}
             contentLabel="Invoices Modal"
             ariaHideApp={false}
             style={{ content: { maxWidth: "600px", margin: "auto" } }}
@@ -643,18 +609,63 @@ const Dashboard = () => {
             <h3>Invoices for Appointment</h3>
             <div>
               {invoicesList.map((inv, idx) => (
-                <div key={inv._id || inv.id} style={{ marginBottom: 10, borderBottom: '1px solid #eee', paddingBottom: 8 }}>
-                  <div><b>Invoice #:</b> {inv.invoiceNumber || inv._id || inv.id}</div>
-                  <div><b>Date:</b> {inv.issuedAt ? String(inv.issuedAt).substring(0,10) : (inv.date ? String(inv.date).substring(0,10) : '-')}</div>
-                  <div><b>Total:</b> {inv.total || inv.subtotal || 0}</div>
-                  <button className="btn btn-primary" style={{ marginRight: 8 }} onClick={() => setSelectedInvoiceId(inv._id || inv.id)}>View</button>
-                  <button className="btn" onClick={() => window.open(`/invoice/${inv._id || inv.id}`, '_blank')}>Open Full Page</button>
+                <div
+                  key={inv._id || inv.id}
+                  style={{
+                    marginBottom: 10,
+                    borderBottom: "1px solid #eee",
+                    paddingBottom: 8,
+                  }}
+                >
+                  <div>
+                    <b>Invoice #:</b> {inv.invoiceNumber || inv._id || inv.id}
+                  </div>
+                  <div>
+                    <b>Date:</b>{" "}
+                    {inv.issuedAt
+                      ? String(inv.issuedAt).substring(0, 10)
+                      : inv.date
+                      ? String(inv.date).substring(0, 10)
+                      : "-"}
+                  </div>
+                  <div>
+                    <b>Total:</b> {inv.total || inv.subtotal || 0}
+                  </div>
+                  <button
+                    className="btn btn-primary"
+                    style={{ marginRight: 8 }}
+                    onClick={() => setSelectedInvoiceId(inv._id || inv.id)}
+                  >
+                    View
+                  </button>
+                  <button
+                    className="btn"
+                    onClick={() =>
+                      window.open(`/invoice/${inv._id || inv.id}`, "_blank")
+                    }
+                  >
+                    Open Full Page
+                  </button>
                 </div>
               ))}
             </div>
-            <button className="btn" style={{ marginTop: 12 }} onClick={() => { setShowInvoicesModal(false); setInvoicesList([]); setSelectedInvoiceId(null); }}>Close</button>
+            <button
+              className="btn"
+              style={{ marginTop: 12 }}
+              onClick={() => {
+                setShowInvoicesModal(false);
+                setInvoicesList([]);
+                setSelectedInvoiceId(null);
+              }}
+            >
+              Close
+            </button>
             {/* InvoiceViewer for selected invoice inside modal */}
-            <InvoiceViewer invoiceId={selectedInvoiceId} isOpen={!!selectedInvoiceId} onClose={() => setSelectedInvoiceId(null)} />
+            <InvoiceViewer
+              invoiceId={selectedInvoiceId}
+              isOpen={!!selectedInvoiceId}
+              onClose={() => setSelectedInvoiceId(null)}
+            />
           </Modal>
 
           {/* Prescription modal - only for prescription */}
