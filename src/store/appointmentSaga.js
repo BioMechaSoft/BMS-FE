@@ -17,7 +17,9 @@ function* createAppointmentSaga(action) {
       toast.success('Appointment created and invoice downloaded');
     } else {
       const data = response.data;
-      yield put(createAppointmentSuccess(data));
+      // prefer the server-returned appointment object as the canonical created record
+      const payload = { appointment: data.appointment || data, message: data.message };
+      yield put(createAppointmentSuccess(payload));
       toast.success(data.message || 'Appointment created');
       // Invoice creation is handled by the backend now; no client-side auto-create.
     }

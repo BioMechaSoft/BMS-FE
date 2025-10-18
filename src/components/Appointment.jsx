@@ -30,6 +30,7 @@ const Appointment = () => {
   const [doctorFee, setDoctorFee] = useState(100);
   // const [diagnosys, setDiagnosys] = useState("N/A");
   const [paymentStatus, setPaymentStatus] = useState("Pending");
+  
   const [BP, setBP] = useState("");
   const [SPO2, setSPO2] = useState("");
   const [diabetes, setDiabetes] = useState("");
@@ -320,9 +321,11 @@ const Appointment = () => {
         doctorId: _id || undefined,
         hasVisited: hasVisitedBool,
         address,
-        price,
-        paymentStatus,
-        status: paymentStatus === "Accepted" ? "Accepted" : "Pending",
+    price,
+      // send paymentStatus to backend and let backend decide status according to centralized rules
+      paymentStatus,
+      // do not set status from frontend creation; backend will harmonize (Paid -> Accepted at creation)
+      status: undefined,
         // diagnosys,
         BP: BP || undefined,
         SPO2: SPO2 || undefined,

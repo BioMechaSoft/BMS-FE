@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { TiHome } from "react-icons/ti";
 import { RiLogoutBoxFill } from "react-icons/ri";
 import { AiFillMessage } from "react-icons/ai";
+import { BiBarChart } from "react-icons/bi";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { FaUserDoctor } from "react-icons/fa6";
 import { MdAddModerator } from "react-icons/md";
@@ -49,6 +50,10 @@ const Sidebar = () => {
     navigateTo("/messages");
     setShow(!show);
   };
+  const gotoReportsPage = () => {
+    navigateTo('/reports');
+    setShow(!show);
+  }
   const gotoAddNewDoctor = () => {
     navigateTo("/doctor/addnew");
     setShow(!show);
@@ -83,6 +88,7 @@ const Sidebar = () => {
           {role === 'Admin' && <IoPersonAddSharp onClick={gotoAddNewDoctor} />}
           {/* Messages and Prescriptions available to Admin, Doctor, Compounder */}
           {(["Admin","Doctor","Compounder"].includes(role)) && <AiFillMessage onClick={gotoMessagesPage} />}
+          {(["Admin","Doctor","Compounder"].includes(role)) && <BiBarChart onClick={gotoReportsPage} />}
           {/* {(["Admin","Doctor","Compounder"].includes(role)) && <FaPrescription onClick={prescriptionPage} />} */}
           {/* Settings: Admin and Doctor have access to settings */}
           {(["Admin","Doctor"].includes(role)) && <FiSettings onClick={gotoSettingsPage} />}

@@ -1,0 +1,20 @@
+.reports-page .banner { background: #fff; padding: 12px 18px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.reports-page .reports-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-top: 12px; }
+.reports-page .card { background: #fff; padding: 14px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.reports-page .card .label { color: #666; font-size: 13px; margin-bottom: 6px }
+.reports-page .card .value { margin: 0; font-size: 22px }
+.reports-page .table-wrap { margin-top: 18px; background: #fff; padding: 12px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.reports-table { width: 100%; border-collapse: collapse; font-size: 13px }
+.reports-table th, .reports-table td { padding: 10px 8px; border-bottom: 1px solid #f2f2f2; text-align: left }
+.reports-table th { background: #fafafa; color: #333; font-weight: 600 }
+.btn { background: #096dd9; color: white; padding: 8px 10px; border-radius: 6px; border: none; cursor: pointer }
+.btn[disabled] { opacity: 0.6; cursor: not-allowed }
+
+@media (max-width: 900px) {
+  .reports-page .reports-cards { grid-template-columns: repeat(2,1fr); }
+}
+
+@media (max-width: 520px) {
+  .reports-page .reports-cards { grid-template-columns: repeat(1,1fr); }
+  .reports-page .banner > div:last-child { display: flex; flex-direction: column; gap: 8px }
+}

@@ -28,6 +28,7 @@ import AdvancedSettings from "./components/AdvancedSettings";
 import RequireAuth from "./components/RequireAuth";
 import InvoiceSettings from "./components/InvoiceSettings";
 import InvoicePage from "./components/InvoicePage";
+import ReportsPage from "./components/ReportsPage";
 
 const App = () => {
   const { isAuthenticated, setIsAuthenticated, admin, setAdmin } =
@@ -86,6 +87,11 @@ const App = () => {
         <Route path="/settings" element={
           <RequireAuth allowedRoles={["Admin","Doctor"]}>
             <Settings />
+          </RequireAuth>
+        } />
+        <Route path="/reports" element={
+          <RequireAuth allowedRoles={["Admin","Doctor","Compounder"]}>
+            <ReportsPage />
           </RequireAuth>
         } />
         <Route path="/settings/medicine" element={

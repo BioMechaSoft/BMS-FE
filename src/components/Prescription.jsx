@@ -616,7 +616,20 @@ const Prescription = ({ patientId, onClose }) => {
         );
         return;
       }
-      await api.put(`/api/v1/appointment/patient/update/${patientId}`, {
+      // Ensure we check latest appointment payment status to decide whether Completed is allowed
+      let latestPaymentStatus = null;
+      try {
+        const { data } = await api.get(`/api/v1/appointment/patient/${patientId}`);
+        const appts = data.appointments || [];
+        if (appts.length > 0) {
+          appts.sort((a,b) => new Date(b.appointment_date) - new Date(a.appointment_date));
+          latestPaymentStatus = appts[0].paymentStatus;
+        }
+      } catch (e) {
+        // ignore - default logic will apply
+      }
+
+      const savePayload = {
         result: [
           {
             initialComplain,
@@ -626,9 +639,14 @@ const Prescription = ({ patientId, onClose }) => {
             advice: adviceToSave,
           },
         ],
-        status: "Completed",
+        
         doctorId: doctorId || undefined,
-      });
+      };
+
+      // Indicate to backend this is a prescription save/print operation
+      if (printAfter) savePayload.printed = true;
+      // Let backend determine final status/paymentStatus according to prescription_save rules
+      const { data } = await api.put(`/api/v1/appointment/patient/update/${patientId}`, savePayload);
       if (doctorContact) {
         await api.post(`/api/v1/message/send`, {
           firstName: "System",
@@ -638,7 +656,13 @@ const Prescription = ({ patientId, onClose }) => {
           message: `Prescription completed for patient NIC: ${nic}`,
         });
       }
-      toast.success("Prescription saved");
+      toast.success(data?.message || "Prescription saved");
+      // notify other parts of the app (Dashboard) that appointments may have updated
+      try {
+        window.dispatchEvent(new CustomEvent('appointments:updated', { detail: { patientId, appointment: data?.appointment } }));
+      } catch (e) {
+        // ignore if environment doesn't support
+      }
       // refresh original snapshot to current state
       const advSaved = adviceToSave;
       const newSnap = {

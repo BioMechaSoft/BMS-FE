@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState, useMemo } from "react";
 import InvoiceViewer from './InvoiceViewer';
+import Reports from './Reports';
 import { Context } from "../main";
 import { Navigate, useNavigate } from "react-router-dom";
 import api from "../utils/api";
@@ -42,7 +43,28 @@ const Dashboard = () => {
       }
     };
     fetchAppointments();
+
+    const onUpdated = () => fetchAppointments();
+    window.addEventListener('appointments:updated', onUpdated);
+    return () => window.removeEventListener('appointments:updated', onUpdated);
   }, []);
+
+  const handleUpdatePaymentStatus = async (appointmentId, paymentStatus) => {
+    try {
+      // send only paymentStatus and let backend harmonize status/payment according to rules
+      const body = { paymentStatus };
+      const { data } = await api.put(`/api/v1/appointment/status/${appointmentId}`, body);
+      const updated = data.appointment || null;
+      if (updated) {
+        setAppointments((prev) => prev.map(a => a._id === appointmentId ? updated : a));
+      } else {
+        setAppointments((prev) => prev.map(a => a._id === appointmentId ? { ...a, paymentStatus: paymentStatus } : a));
+      }
+      toast.success(data.message || 'Payment status updated');
+    } catch (e) {
+      toast.error(e?.response?.data?.message || 'Failed to update payment status');
+    }
+  };
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -105,18 +127,14 @@ const Dashboard = () => {
 
   const handleUpdateStatus = async (appointmentId, status) => {
     try {
-      const { data } = await api.put(
-        `/api/v1/appointment/status/${appointmentId}`,
-        { status }
-      );
-      setAppointments((prevAppointments) =>
-        prevAppointments.map((appointment) =>
-          appointment._id === appointmentId
-            ? { ...appointment, status }
-            : appointment
-        )
-      );
-      toast.success(data.message);
+      // Let backend enforce rules. When requesting Completed, backend will ensure paymentStatus is Paid.
+      const body = { status };
+      const { data } = await api.put(`/api/v1/appointment/status/${appointmentId}`, body);
+      const updatedAppt = data.appointment || null;
+      if (updatedAppt) {
+        setAppointments((prev) => prev.map((a) => (a._id === appointmentId ? updatedAppt : a)));
+      }
+      toast.success(data.message || 'Status updated');
     } catch (error) {
       toast.error(error.response.data.message);
     }
@@ -211,6 +229,8 @@ const Dashboard = () => {
             <h3>{Doctors.length}</h3>
           </div>
         </div>
+  {/* Reports summary (today/month/total) */}
+  <Reports appointments={appointments} />
 
         {/* Middle banner / navbar-like filter area */}
         <div className="banner middle-banner">
@@ -440,6 +460,7 @@ const Dashboard = () => {
                   <th>Gender</th>
                   <th>Payment Mode</th>
                   <th>Fees Amount</th>
+                  <th>Payment Status</th>
                   <th>Status</th>
                   <th>Doctor</th>
                   <th>Department</th>
@@ -545,6 +566,13 @@ const Dashboard = () => {
                           <td>{appointment.paymentMode || "Cash"}</td>
                           <td>{appointment.feesAmount || "0"}</td>
                           <td>
+                            <select value={appointment.paymentStatus || 'Pending'} onChange={(e) => handleUpdatePaymentStatus(appointment._id, e.target.value)}>
+                              <option value="Pending">Pending</option>
+                              <option value="Accepted">Accepted</option>
+                              <option value="Paid">Paid</option>
+                            </select>
+                          </td>
+                          <td>
                             <select
                               className={
                                 appointment.status === "Pending"
@@ -575,6 +603,12 @@ const Dashboard = () => {
                                 className="value-rejected"
                               >
                                 Rejected
+                              </option>
+                              <option
+                                value="Completed"
+                                className="value-completed" 
+                              >
+                                Completed
                               </option>
                             </select>
                           </td>
