@@ -3,7 +3,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import "./preview.css";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchPreviewRequest, resetPreview } from '../store/previewSlice';
 import { dobToAge } from '../utils/ageUtils';
@@ -11,7 +11,6 @@ import { Context } from '../main';
 
 // Helper: format date
 const formatDate = (date) => date ? new Date(date).toLocaleDateString() : '';
-
 const Preview = () => {
     const { patientId } = useParams();
     const dispatch = useDispatch();
@@ -22,6 +21,7 @@ const Preview = () => {
     const error = preview.error;
     const [editMode, setEditMode] = useState(false);
     const { isAuthenticated, admin } = useContext(Context);
+    const navigate = useNavigate()
 
     // Role check
     const canEdit = isAuthenticated && ["Admin", "Doctor"].includes(admin?.role);
@@ -103,6 +103,11 @@ const Preview = () => {
     // --- UI ---
     return (
         <section className='page modern-preview'>
+            <div className="back-btn-box" style={{width:"100%"}}>
+          <button className="back-btn add-btn" onClick={() => navigate("/")}>
+            ← Go Back
+          </button>
+        </div>
             <div className='prescription'>
                 <div className='presdownload' id='pdfDownload'>
                     <div className='content'>

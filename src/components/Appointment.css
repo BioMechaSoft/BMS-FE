@@ -86,7 +86,7 @@ form textarea {
 .lnr-input-box {
     display: flex;
     gap: 2rem;
-    align-items: center;
+    align-items: end;
     margin-bottom: 2rem;
 }
 .age-grid {
@@ -94,7 +94,6 @@ form textarea {
     gap: 0.5rem;
     width: 100%;
     justify-content: space-between;
-    margin-right: 2rem;
 }
 .age-grid input{
     max-width: 7rem;
@@ -106,7 +105,6 @@ form textarea {
     align-items: start;
     gap: 0.5rem;
     height: 100%;
-    margin-bottom: 2rem;
 }
 
 .btn-container {
@@ -158,7 +156,6 @@ textarea {
     color: rgba(39, 23, 118, 0.792);
     font-weight: 500;
     flex: 1;
-    text-align: right;
 }
 
 .pay-status-box{
@@ -179,6 +176,9 @@ textarea {
     .appointment-form form div {
         flex-direction: column;
     }
+    .appointment-form form div .age-grid{
+        flex-direction: row;
+    }
     .has-visited-box {
         height: fit-content;
     }
@@ -193,6 +193,15 @@ textarea {
         font-weight: 500;
         padding: 0.3125rem 0.625rem; /* 5px 10px */
         border-radius: 0.3125rem; /* 5px */
+    }
+    .lnr-input-box{
+        align-items: center;
+    }
+    .inner-box-of-lnr{
+        width: 100%;
+    }
+    form input, form select, form textarea {
+        width: 100%;
     }
     .appointment-form .btn-container button {
         font-size: 1rem;
