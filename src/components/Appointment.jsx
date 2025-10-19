@@ -81,7 +81,7 @@ const Appointment = () => {
         const { data } = await api.get(`/api/v1/user/doctors`);
         setDoctors(data.doctors || []);
       } catch (err) {
-        console.error("Failed to fetch doctors", err);
+        toast.error(err?.response?.data?.message || "Failed to fetch doctors");
       }
     };
     fetchDoctors();
@@ -352,7 +352,7 @@ const Appointment = () => {
         weight: width || undefined,
         others: others || undefined,
       };
-      console.log("Appointment JSON payload:", payload);
+  // payload prepared for appointment creation
       if (!canBook)
         return toast.error(
           "Only Admin/Doctor/Compounder may create appointments. Please login to dashboard."
@@ -365,11 +365,9 @@ const Appointment = () => {
 
       // Let saga handle success. Saga will toast. We listen to appointmentState below to reset.
     } catch (error) {
-      console.error(error);
+      // show friendly error to user
       toast.error(
-        error.response && error.response.data.message
-          ? error.response.data.message
-          : "An error occurred. Please try again."
+        error?.response?.data?.message || "An error occurred. Please try again."
       );
     }
   };
@@ -557,8 +555,7 @@ const Appointment = () => {
                     {showPatientSuggestions && patientSuggestions && patientSuggestions.length > 0 && (
                       <div style={{ position: 'absolute', left: 0, right: 0, background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', zIndex: 1200, maxHeight: 220, overflowY: 'auto' }}>
                         {patientSuggestions.map((p) => (
-                          <div key={p._id} style={{ padding: '8px 10px', borderBottom: '1px solid #eee', cursor: 'pointer' }} onClick={() => {
-                            console.log('Selected patient suggestion:', p);
+                            <div key={p._id} style={{ padding: '8px 10px', borderBottom: '1px solid #eee', cursor: 'pointer' }} onClick={() => {
                             toast.success('Prefilled existing patient');
                             // autofill fields
                             setName(p.name || '');

@@ -33,18 +33,13 @@ const Preview = () => {
 
 
     useEffect(() => {
-        console.log('[Preview] routePatientId:', routePatientId, 'appointmentIdFromQuery:', appointmentIdFromQuery);
-        if (!patientId) {
-            console.warn('[Preview] No patientId or appointmentId available in route/query.');
-            return;
-        }
+        if (!patientId) return;
         // try to detect whether this is an appointment id (24 hex chars) or a patient id
         const isMongoId = /^[0-9a-fA-F]{24}$/.test(patientId);
-        console.log('[Preview] dispatching fetchPreviewRequest with id:', patientId, 'isMongoId?', isMongoId);
         dispatch(fetchPreviewRequest({ patientId }));
         return () => { dispatch(resetPreview()); };
     }, [routePatientId, appointmentIdFromQuery]);
-    console.log('[Preview] preview slice:', preview)
+    
 
 
     // PDF Download (A4, margin)

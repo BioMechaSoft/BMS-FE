@@ -6,11 +6,16 @@ import store from './store';
 import { useSelector, useDispatch } from 'react-redux';
 import { hydrateTheme } from './store/themeSlice';
 
-// Apply saved theme on initial load
-const savedTheme = localStorage.getItem("dashboard-theme");
-if (savedTheme) {
-  document.body.classList.add(savedTheme);
-}
+// Apply saved theme on initial load (normalize legacy keys)
+const _raw = localStorage.getItem("dashboard-theme");
+const _normalize = (t) => {
+  if (!t) return 'theme-light';
+  if (t === 'light') return 'theme-light';
+  if (t === 'dark') return 'theme-dark';
+  return t;
+};
+const savedTheme = _normalize(_raw);
+if (savedTheme) document.body.classList.add(savedTheme);
 
 export const Context = createContext({ isAuthenticated: false });
 
@@ -26,9 +31,9 @@ const AppWrapper = () => {
   }, []);
 
   React.useEffect(() => {
-    // Remove all theme classes, then add current
-    document.body.classList.remove('light', 'dark', 'theme-cyberpunk', 'theme-blackpink', 'theme-retro', 'theme-darkgreen', 'theme-custom');
-    document.body.classList.add(theme);
+  // Remove known theme classes, then add current normalized theme
+  document.body.classList.remove('theme-light', 'theme-dark', 'theme-cyberpunk', 'theme-blackpink', 'theme-retro', 'theme-darkgreen', 'theme-custom');
+  document.body.classList.add(theme);
     document.body.style.transition = 'background 0.3s, color 0.3s';
 
     // If custom theme, apply variables globally
@@ -48,6 +53,24 @@ const AppWrapper = () => {
       root.style.removeProperty('--text-size');
       root.style.removeProperty('--bg-main');
       root.style.removeProperty('--accent');
+    }
+    // Apply theme-specific font families for visibility
+    const root = document.documentElement;
+    if (theme === 'theme-dark') {
+      root.style.setProperty('--app-font', 'Inter, system-ui, -apple-system, sans-serif');
+      root.style.setProperty('--sidebar-bg', 'var(--bg-card)');
+    } else if (theme === 'theme-light') {
+      root.style.setProperty('--app-font', 'Montserrat, system-ui, -apple-system, sans-serif');
+      root.style.setProperty('--sidebar-bg', 'transparent');
+    } else if (theme === 'theme-cyberpunk') {
+      root.style.setProperty('--app-font', 'Orbitron, sans-serif');
+      root.style.setProperty('--sidebar-bg', 'rgba(20,15,40,0.6)');
+    } else if (theme === 'theme-blackpink') {
+      root.style.setProperty('--app-font', 'Poppins, sans-serif');
+      root.style.setProperty('--sidebar-bg', 'rgba(20,0,20,0.6)');
+    } else {
+      root.style.setProperty('--app-font', 'Montserrat, system-ui, -apple-system, sans-serif');
+      root.style.setProperty('--sidebar-bg', 'transparent');
     }
   }, [theme]);
 

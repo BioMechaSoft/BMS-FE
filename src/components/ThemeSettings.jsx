@@ -6,8 +6,8 @@ import "./Settings.css";
 
 
 const themes = [
-  { key: "light", name: "Light" },
-  { key: "dark", name: "Dark" },
+  { key: "theme-light", name: "Light" },
+  { key: "theme-dark", name: "Dark" },
   { key: "theme-cyberpunk", name: "Cyberpunk" },
   { key: "theme-blackpink", name: "Black Pink" },
   { key: "theme-retro", name: "Retro" },

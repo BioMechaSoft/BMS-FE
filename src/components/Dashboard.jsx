@@ -150,7 +150,6 @@ const Dashboard = () => {
       const { data } = await api.get(
         `/api/v1/invoice/appointment/${appointmentId}`
       );
-      console.log("Invoice API response:", data);
       let invoices = [];
       if (Array.isArray(data.invoices)) {
         invoices = data.invoices;
@@ -165,7 +164,7 @@ const Dashboard = () => {
       } else if (data && data._id) {
         invoices = [data];
       }
-      console.log("Extracted invoices:", invoices);
+  // extracted invoices from API response
       if (!invoices || invoices.length === 0) {
         toast.info("No invoice found for this appointment");
         return;
@@ -174,7 +173,6 @@ const Dashboard = () => {
       setShowInvoicesModal(true);
       setSelectedInvoiceId(null);
     } catch (e) {
-      console.error("Invoice fetch failed", e);
       toast.error("Failed to fetch invoice for appointment");
     }
   };

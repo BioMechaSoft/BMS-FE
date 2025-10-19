@@ -26,8 +26,10 @@ const AddNewAdmin = () => {
       try {
   const { data } = await api.get('/api/v1/user/doctors');
         setAvailableDoctors(data.doctors || []);
-      } catch (err) {
-        console.error('Failed to fetch doctors for assignment', err);
+        } catch (err) {
+        // show friendly message
+         
+        if (typeof toast !== 'undefined') toast.error('Failed to fetch doctors for assignment');
       }
     };
     if (role === 'Doctor' && admin?._id) {

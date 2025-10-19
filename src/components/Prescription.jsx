@@ -164,7 +164,9 @@ const Prescription = ({ patientId, onClose }) => {
       try {
   const { data } = await api.get(`/api/v1/user/doctors/list`);
         setDoctorsList(data.doctors || []);
-      } catch (e) {}
+      } catch (e) {
+      toast.error(e?.response?.data?.message || 'Failed to save prescription');
+    }
     };
     fetchDoctors();
   }, []);
@@ -600,8 +602,7 @@ const Prescription = ({ patientId, onClose }) => {
         if (onClose) onClose();
       }
     } catch (e) {
-      console.error(e);
-      toast.error("Failed to save prescription or notify doctor.");
+        toast.error("Failed to save prescription or notify doctor.");
     }
   }
 

@@ -5,12 +5,11 @@ import { fetchPreviewRequest, fetchPreviewSuccess, fetchPreviewFailure } from '.
 function* fetchPreviewSaga(action) {
   try {
     const { patientId } = action.payload;
-    console.log('[previewSaga] fetchPreviewSaga called with id:', patientId);
-    const { data: ad } = yield call(api.get, `/api/v1/appointment/patient/${patientId}`);
+  const { data: ad } = yield call(api.get, `/api/v1/appointment/patient/${patientId}`);
     const appts = ad.appointments || [];
     let patient = null;
     let doctor = null;
-    console.log('[previewSaga] fetched appointments:', appts);
+  // fetched appointments (if any)
     if (appts.length > 0) {
       appts.sort((a, b) => new Date(b.appointment_date) - new Date(a.appointment_date));
       const latest = appts[0];
@@ -48,7 +47,6 @@ function* fetchPreviewSaga(action) {
     // If no appointments returned, try fetching patient directly (fallback)
     if (!patient && appts.length === 0) {
       try {
-        console.log('[previewSaga] no appointments found, trying /api/v1/user/patient/' + patientId);
         const { data: ud } = yield call(api.get, `/api/v1/user/patient/${patientId}`);
         const u = ud.patient || ud.user || null;
         if (u) {
@@ -76,7 +74,7 @@ function* fetchPreviewSaga(action) {
           };
         }
       } catch (e) {
-        console.warn('[previewSaga] fallback patient fetch failed:', e.message || e);
+        // fallback patient fetch failed - swallow to allow saga to continue
       }
     }
     yield put(fetchPreviewSuccess({ patient, doctor }));

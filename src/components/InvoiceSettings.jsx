@@ -20,7 +20,7 @@ const InvoiceSettings = () => {
       const { data } = await api.get('/api/v1/invoice', { params });
       setInvoices(data.invoices || []);
       setTotal(data.total || (data.invoices || []).length);
-    } catch (e) { console.error(e); alert('Failed to load invoices'); }
+  } catch (e) { alert('Failed to load invoices'); }
     finally { setLoading(false); }
   };
 
@@ -42,7 +42,7 @@ const InvoiceSettings = () => {
         alert('Invoice created');
       }
       setForm({ invoiceNumber: '', patient: '', appointment: '', doctor:'', items: [], tax:0, discount:0, dueDate: '', status: 'Pending' });
-    } catch (e) { console.error(e); alert('Failed to save invoice'); }
+  } catch (e) { alert('Failed to save invoice'); }
   };
 
   const handleEdit = (inv) => {
@@ -53,15 +53,15 @@ const InvoiceSettings = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete invoice?')) return;
-    try { await api.delete(`/api/v1/invoice/${id}`); setInvoices(prev => prev.filter(i => i._id !== id && i.id !== id)); alert('Deleted'); } catch(e){ console.error(e); alert('Delete failed'); }
+  try { await api.delete(`/api/v1/invoice/${id}`); setInvoices(prev => prev.filter(i => i._id !== id && i.id !== id)); alert('Deleted'); } catch(e){ alert('Delete failed'); }
   };
 
   const fetchByAppointment = async (appointmentId) => {
-    try { const { data } = await api.get(`/api/v1/invoice/appointment/${appointmentId}`); return data.invoices || data.invoice || data; } catch(e){ console.error(e); alert('Fetch by appointment failed'); return null; }
+  try { const { data } = await api.get(`/api/v1/invoice/appointment/${appointmentId}`); return data.invoices || data.invoice || data; } catch(e){ alert('Fetch by appointment failed'); return null; }
   };
 
   const handleUpdateByAppointment = async (appointmentId, partial) => {
-    try { const { data } = await api.put(`/api/v1/invoice/appointment/${appointmentId}`, partial); alert(`Updated ${data.updatedCount} invoices`); return data; } catch(e){ console.error(e); alert('Update by appointment failed'); }
+  try { const { data } = await api.put(`/api/v1/invoice/appointment/${appointmentId}`, partial); alert(`Updated ${data.updatedCount} invoices`); return data; } catch(e){ alert('Update by appointment failed'); }
   };
 
   const stats = useMemo(()=>({}), []);

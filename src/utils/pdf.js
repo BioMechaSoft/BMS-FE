@@ -1,1 +1,1 @@
-// Utility for PDF generation (placeholder, handled in Preview.jsx for now)
+// PDF utilities are handled directly in Preview.jsx; this file is intentionally minimal.
