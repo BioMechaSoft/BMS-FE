@@ -30,7 +30,7 @@ const Appointment = () => {
   const [doctorFee, setDoctorFee] = useState(100);
   // const [diagnosys, setDiagnosys] = useState("N/A");
   const [paymentStatus, setPaymentStatus] = useState("Pending");
-  
+
   const [BP, setBP] = useState("");
   const [SPO2, setSPO2] = useState("");
   const [diabetes, setDiabetes] = useState("");
@@ -321,11 +321,11 @@ const Appointment = () => {
         doctorId: _id || undefined,
         hasVisited: hasVisitedBool,
         address,
-    price,
-      // send paymentStatus to backend and let backend decide status according to centralized rules
-      paymentStatus,
-      // do not set status from frontend creation; backend will harmonize (Paid -> Accepted at creation)
-      status: undefined,
+        price,
+        // send paymentStatus to backend and let backend decide status according to centralized rules
+        paymentStatus,
+        // do not set status from frontend creation; backend will harmonize (Paid -> Accepted at creation)
+        status: undefined,
         // diagnosys,
         BP: BP || undefined,
         SPO2: SPO2 || undefined,
@@ -455,7 +455,7 @@ const Appointment = () => {
         <div className="  appointment-form">
           <h2>Appointment</h2>
           <div style={{ marginBottom: "0.5rem" }}>
-            <small>Step {step} of 3</small>
+            <small>Step {step} of 2</small>
             <div style={{ float: "right" }}>
               <small>Shortcut: Ctrl/Cmd+P to submit & download</small>
             </div>
@@ -499,7 +499,16 @@ const Appointment = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                   />
-                  <input
+                  <select
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Others">Others</option>
+                  </select>
+                  {/* <input
                     type="number"
                     placeholder="Age"
                     value={age}
@@ -511,17 +520,39 @@ const Appointment = () => {
                         const mm = String(now.getMonth() + 1).padStart(2, "0");
                         const dd = String(now.getDate()).padStart(2, "0");
                         setDob(`${y}-${mm}-${dd}`);
-                      }
-                    }}
-                  />
+                        }
+                        }}
+                        /> */}
+                </div>
+                <div className=" lnr-input-box">
+                  <div className=" inner-box-of-lnr">
+                    <label htmlFor="">Enter your age:</label>
+                    <div className="age-grid">
+                      <input type="number" placeholder="Years" />
+                      <input type="number" placeholder="Months" />
+                      <input type="number" placeholder="days" />
+                    </div>
+                  </div>
+                  <div className="address-box inner-box-of-lnr">
+                    <label htmlFor="">Addrrss:</label>
+                    <textarea
+                      rows="2"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="Area, vill/City, P.O, P.S, District, PIN code"
+                    />
+                  </div>
                 </div>
                 <div className="lnr-input-box">
-                  <input
-                    type="text"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
+                  <select
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Others">Others</option>
+                  </select>
                   <input
                     type="number"
                     placeholder="Mobile Number"
@@ -543,64 +574,7 @@ const Appointment = () => {
 
             {step === 2 && (
               <div>
-                <div className="lnr-input-box">
-                  <input
-                    readOnly
-                    type="number"
-                    placeholder="NIC"
-                    value={makeNIC(dob, phone)}
-                    onChange={(e) => setNic(e.target.value)}
-                  />
-                  <select
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value)}
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                  </select>
-                </div>
-                <div className="lnr-input-box">
-                  <input
-                    type="date"
-                    placeholder="Date of Birth"
-                    max={todayStr}
-                    value={dob}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setDob(v && v > todayStr ? todayStr : v);
-                      setAge(dobToAge(e.target.value));
-                    }}
-                  />
-                  <input
-                    type="date"
-                    placeholder="Appointment Date"
-                    min={todayStr}
-                    value={appointmentDate}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setAppointmentDate(v && v < todayStr ? todayStr : v);
-                    }}
-                  />
-                </div>
-                <div className="btn-container">
-                  <button type="button" onClick={() => setStep(1)}>
-                    Back
-                  </button>
-                  <button
-                    type="button"
-                    data-step="3"
-                    onClick={() => setStep(3)}
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {step === 3 && (
-              <div>
-                <div className="dep-doc-tarea-container">
+                {/* <div className="dep-doc-tarea-container">
                   <div className="dep-and-doc-container">
                     <div className="dep-doc-container">
                       <input
@@ -692,21 +666,8 @@ const Appointment = () => {
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="Address"
                   />
-                </div>
-                <div
-                  style={{
-                    padding: "10px",
-                    color: "#271776ca",
-                    fontWeight: "500",
-                    textDecoration: "underline",
-                  }}
-                >
-                  Appointment Fee: {price} Rs
-                  <br />
-                  Doctor Fee: {doctorFee} Rs
-                  <br />
-                  <b>Total: {price + doctorFee} Rs</b>
-                </div>
+                </div> */}
+
                 <div className="diagnosis-grid">
                   <div className="diagnosis-grid-col">
                     <div>
@@ -771,24 +732,34 @@ const Appointment = () => {
                     </div>
                   </div>
                 </div>
+
+                <div className="lnr-input-box">
+                  <input
+                    type="date"
+                    placeholder="Appointment Date"
+                    min={todayStr}
+                    value={appointmentDate}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setAppointmentDate(v && v < todayStr ? todayStr : v);
+                    }}
+                  />
+                  <div className="fees-detail-box">
+                    Appointment Fee: {price} Rs
+                    <br />
+                    Doctor Fee: {doctorFee} Rs
+                    <br />
+                    <b>Total: {price + doctorFee} Rs</b>
+                  </div>
+                </div>
+
                 <div style={{ marginTop: "2rem" }}>
-                  <label style={{ marginRight: "1rem" }}>
-                    Payment Status:
-                    <select
-                      value={paymentStatus}
-                      onChange={(e) => setPaymentStatus(e.target.value)}
-                      style={{ marginLeft: "0.5rem" }}
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Accepted">Paid</option>
-                    </select>
-                  </label>
                   <div className="invoice-container">
                     <div
                       className="checkbox-container"
                       style={{ marginTop: "1rem" }}
                     >
-                      <label
+                      {/* <label
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -802,7 +773,19 @@ const Appointment = () => {
                           checked={downloadInvoice}
                           onChange={(e) => setDownloadInvoice(e.target.checked)}
                         />
-                      </label>
+                      </label> */}
+                      <div className="pay-status-box">
+                        <label htmlFor="">Payment Status: </label>
+                        <select
+                          value={paymentStatus}
+                          onChange={(e) => setPaymentStatus(e.target.value)}
+                          // style={{ marginLeft: "0.5rem" }}
+                        >
+                          <option value="Pending">Pending</option>
+                          <option value="Accepted">Paid</option>
+                        </select>
+                      </div>
+
                       <div className="btn-container">
                         <button
                           type="button"
@@ -824,7 +807,7 @@ const Appointment = () => {
                 </div>
 
                 <div className="btn-container">
-                  <button type="button" onClick={() => setStep(2)}>
+                  <button type="button" onClick={() => setStep(1)}>
                     Back
                   </button>
                   <button type="submit">GET APPOINTMENT</button>
@@ -834,7 +817,7 @@ const Appointment = () => {
           </form>
         </div>
       </section>
-     {/* change into jsx page instead of model?? */}
+      {/* change into jsx page instead of model?? */}
       <Modal
         isOpen={showInvoicePreview}
         onRequestClose={() => setShowInvoicePreview(false)}

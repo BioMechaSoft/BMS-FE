@@ -86,6 +86,26 @@ form textarea {
 .lnr-input-box {
     display: flex;
     gap: 2rem;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+.age-grid {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+    justify-content: space-between;
+    margin-right: 2rem;
+}
+.age-grid input{
+    max-width: 7rem;
+}
+.inner-box-of-lnr{
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: start;
+    gap: 0.5rem;
+    height: 100%;
     margin-bottom: 2rem;
 }
 
@@ -119,7 +139,7 @@ form textarea {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     gap: 2rem;
-    margin-top: 2rem;
+    margin-bottom: 2rem;
 }
 
 .diagnosis-grid-col {
@@ -131,6 +151,20 @@ form textarea {
 .diagnosis-grid-col input, 
 textarea {
     width: 100%;
+}
+
+.fees-detail-box{
+    padding: 10px;
+    color: rgba(39, 23, 118, 0.792);
+    font-weight: 500;
+    flex: 1;
+    text-align: right;
+}
+
+.pay-status-box{
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 /* ================== Responsive ================== */

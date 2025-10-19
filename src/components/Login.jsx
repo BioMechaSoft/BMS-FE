@@ -74,7 +74,7 @@ const Login = () => {
             </label>
           </div>
           <div style={{ justifyContent: "center", alignItems: "center" }}>
-            <button type="submit">Login</button>
+            <button type="submit" style={{border:"1px solid grey", borderRadius:"0.5rem"}}>Login</button>
           </div>
         </form>
       </section>

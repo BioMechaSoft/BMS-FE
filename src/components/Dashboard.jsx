@@ -20,7 +20,7 @@ import { IoReceipt } from "react-icons/io5";
 const Dashboard = () => {
   const [appointments, setAppointments] = useState([]);
   const [selectedAppointments, setSelectedAppointments] = useState([]);
-  const [filterOption, setFilterOption] = useState("Today");
+  const [filterOption, setFilterOption] = useState("All");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -579,6 +579,7 @@ const Dashboard = () => {
                                   background: "none",
                                   border: "none",
                                   color: "#0859afff",
+                                  cursor: "pointer",
                                 }}
                               >
                                 <RiCalendarScheduleFill />
@@ -588,6 +589,7 @@ const Dashboard = () => {
                                   background: "none",
                                   border: "none",
                                   color: "#5bbe8eff",
+                                  cursor: "pointer",
                                 }}
                               >
                                 <FaEye />
@@ -597,6 +599,7 @@ const Dashboard = () => {
                                   background: "none",
                                   border: "none",
                                   color: "#760692ff",
+                                  cursor: "pointer",
                                 }}
                                 onClick={() =>
                                   handleInvoiceClick(appointment._id)
@@ -613,6 +616,7 @@ const Dashboard = () => {
                                     background: "none",
                                     border: "none",
                                     color: "#b10c0c",
+                                    cursor: "pointer",
                                   }}
                                 >
                                   <FaTrash />
@@ -708,7 +712,7 @@ const Dashboard = () => {
             onRequestClose={closePrescriptionModal}
             contentLabel="Prescription Modal"
             ariaHideApp={false}
-            style={{ content: { maxWidth: "700px", margin: "auto" } }}
+            style={{ content: { margin: "auto" } }}
           >
             <Prescription
               patientId={selectedPatientId}
