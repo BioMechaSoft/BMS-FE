@@ -51,6 +51,10 @@ const Appointment = () => {
   const [doctorSearch, setDoctorSearch] = useState("");
   const [departmentSearch, setDepartmentSearch] = useState("");
   const [searchNameOrPhone, setSearchNameOrPhone] = useState("");
+  const [patientSuggestions, setPatientSuggestions] = useState([]);
+  const [showPatientSuggestions, setShowPatientSuggestions] = useState(false);
+  const suggestRef = useRef();
+  const suggestTimer = useRef();
   const formRef = useRef(null);
   const keysPressed = useRef(new Set());
 
@@ -93,6 +97,17 @@ const Appointment = () => {
       }
     };
     checkDashboard();
+  }, []);
+
+  // Click outside to close suggestions
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (suggestRef.current && !suggestRef.current.contains(e.target)) {
+        setShowPatientSuggestions(false);
+      }
+    };
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
   }, []);
 
   // keyboard: Ctrl/Cmd+P => submit & download, global for this form
@@ -511,12 +526,72 @@ const Appointment = () => {
             {step === 1 && (
               <div>
                 <div className="lnr-input-box">
-                  <input
-                    type="text"
-                    placeholder="Full Name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
+                  <div style={{ position: 'relative' }} ref={suggestRef}>
+                    <input
+                      type="text"
+                      placeholder="Full Name"
+                      value={name}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setName(v);
+                        // debounce suggestions
+                        if (suggestTimer.current) clearTimeout(suggestTimer.current);
+                        if (!v || v.trim().length < 2) {
+                          setPatientSuggestions([]);
+                          setShowPatientSuggestions(false);
+                          return;
+                        }
+                        suggestTimer.current = setTimeout(async () => {
+                          try {
+                            const q = encodeURIComponent(v);
+                            const { data } = await api.get(`/api/v1/appointment/suggest`, { params: { q, limit: 8 } });
+                            setPatientSuggestions(data.patients || []);
+                            setShowPatientSuggestions(true);
+                          } catch (err) {
+                            setPatientSuggestions([]);
+                            setShowPatientSuggestions(false);
+                          }
+                        }, 300);
+                      }}
+                    />
+                    {showPatientSuggestions && patientSuggestions && patientSuggestions.length > 0 && (
+                      <div style={{ position: 'absolute', left: 0, right: 0, background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', zIndex: 1200, maxHeight: 220, overflowY: 'auto' }}>
+                        {patientSuggestions.map((p) => (
+                          <div key={p._id} style={{ padding: '8px 10px', borderBottom: '1px solid #eee', cursor: 'pointer' }} onClick={() => {
+                            console.log('Selected patient suggestion:', p);
+                            toast.success('Prefilled existing patient');
+                            // autofill fields
+                            setName(p.name || '');
+                            setPhone(p.phone || '');
+                            setNic(p.nic || '');
+                            if (p.address) setAddress(p.address);
+                            // fill dob/age/gender if present (but do NOT override appointmentDate)
+                            if (p.dob) {
+                              const iso = new Date(p.dob).toISOString().slice(0,10);
+                              setDob(iso);
+                              const parts = dobToAgeParts(iso);
+                              if (parts) {
+                                setAgeYears(String(parts.years || ''));
+                                setAgeMonths(String(parts.months || ''));
+                                setAgeDays(String(parts.days || ''));
+                              }
+                            } else if (p.age) {
+                              setAgeYears(String(p.age || ''));
+                              setAgeMonths('');
+                              setAgeDays('');
+                            }
+                            if (p.gender) setGender(p.gender);
+                            // mark as visited (we found existing patient)
+                            setHasVisited(true);
+                            setShowPatientSuggestions(false);
+                          }}>
+                            <div style={{ fontWeight: 600 }}>{p.name}</div>
+                            <div className="muted" style={{ fontSize: 13 }}>{p.phone || p.email || p.address || ''}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <select
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}

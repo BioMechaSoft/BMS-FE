@@ -5,7 +5,25 @@ import "./Settings.css";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 // import {fa-solid fa-pen} from "@fortawesome/free-solid-svg-icons";
 
-const emptyForm = { name: "", symptoms: "", type: "", route: "", desese_description: "" };
+const emptyForm = {
+  name: "",
+  symptoms: "",
+  type: "",
+  route: "",
+  desese_description: "",
+  // nested structured fields
+  medicines: [], // { name,type,dose,frequency,route,duration,notes }
+  testAdvice: [], // { testName,testType,precautions,testDate }
+  medication: "",
+  diet: "",
+  aliases: "",
+  tags: "",
+  followupDays: "",
+  followupNote: "",
+  dose: "",
+  frequency: "",
+  duration: "",
+};
 
 const MedicineSettings = () => {
   const navigate = useNavigate();
@@ -19,10 +37,34 @@ const MedicineSettings = () => {
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const searchRef = useRef();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [focusedMedicineIndex, setFocusedMedicineIndex] = useState(null);
+  const drawerContentRef = useRef();
+  const medicineRowRefs = useRef({});
+  const [filterType, setFilterType] = useState('');
+  const [filterTag, setFilterTag] = useState('');
+  const [filterHasTest, setFilterHasTest] = useState('');
+  const [openCardIds, setOpenCardIds] = useState(new Set());
 
   useEffect(() => {
     fetchMedicines();
   }, []);
+
+  // When drawer opens and a focused medicine index exists, scroll it into view
+  useEffect(() => {
+    if (!drawerOpen) return;
+    if (focusedMedicineIndex === null || focusedMedicineIndex === undefined) return;
+    // small timeout to wait for drawer mount/render
+    setTimeout(() => {
+      const el = medicineRowRefs.current && medicineRowRefs.current[focusedMedicineIndex];
+      if (el && typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // try focusing first input inside the row
+        const input = el.querySelector('input, textarea');
+        if (input) input.focus();
+      }
+    }, 120);
+  }, [drawerOpen, focusedMedicineIndex]);
 
   useEffect(() => {
     // debounce search
@@ -96,6 +138,33 @@ const MedicineSettings = () => {
         type: form.type,
         route: form.route,
         desese_description: form.desese_description,
+        // nested
+        medicines: Array.isArray(form.medicines) ? form.medicines.map(m => ({
+          name: m.name || "",
+          type: m.type || "",
+          dose: m.dose || "",
+          frequency: m.frequency || "",
+          route: m.route || "",
+          duration: m.duration || "",
+          notes: m.notes || "",
+        })) : [],
+        testAdvice: Array.isArray(form.testAdvice) ? form.testAdvice.map(t => ({
+          testName: t.testName || "",
+          testType: t.testType || "",
+          precautions: t.precautions || "",
+          testDate: t.testDate || "",
+        })) : [],
+        medication: form.medication || "",
+        diet: form.diet || "",
+        aliases: form.aliases.split(",").map(s => s.trim()).filter(Boolean),
+        tags: form.tags.split(",").map(s => s.trim()).filter(Boolean),
+        followup: {
+          days: form.followupDays ? parseInt(form.followupDays, 10) : undefined,
+          note: form.followupNote || "",
+        },
+        dose: form.dose || "",
+        frequency: form.frequency || "",
+        duration: form.duration || "",
       };
       if (editingId) {
   await api.put(`/api/v1/medical/${editingId}`, payload);
@@ -103,7 +172,10 @@ const MedicineSettings = () => {
   await api.post(`/api/v1/medical/`, payload);
       }
       setForm(emptyForm);
-      setEditingId(null);
+  setEditingId(null);
+  // clear focused medicine selection and refs after save
+  setFocusedMedicineIndex(null);
+  medicineRowRefs.current = {};
       await fetchMedicines();
     } catch (err) {
       setError("Failed to save medicine");
@@ -112,10 +184,47 @@ const MedicineSettings = () => {
     }
   };
 
+  // Nested handlers for medicines
+  const addMedicineRow = () => setForm(prev => ({ ...prev, medicines: [ ...(prev.medicines || []), { name: '', type: '', dose: '', frequency: '', route: '', duration: '', notes: '' } ] }));
+  const updateMedicineRow = (idx, field, value) => setForm(prev => ({ ...prev, medicines: prev.medicines.map((m, i) => i===idx ? { ...m, [field]: value } : m) }));
+  const removeMedicineRow = (idx) => setForm(prev => ({ ...prev, medicines: prev.medicines.filter((_, i) => i !== idx) }));
+
+  // Nested handlers for testAdvice
+  const addTestRow = () => setForm(prev => ({ ...prev, testAdvice: [ ...(prev.testAdvice || []), { testName: '', testType: '', precautions: '', testDate: '' } ] }));
+  const updateTestRow = (idx, field, value) => setForm(prev => ({ ...prev, testAdvice: prev.testAdvice.map((t, i) => i===idx ? { ...t, [field]: value } : t) }));
+  const removeTestRow = (idx) => setForm(prev => ({ ...prev, testAdvice: prev.testAdvice.filter((_, i) => i !== idx) }));
+
   const handleEdit = (m) => {
-    setEditingId(m._id);
-    setForm({ name: m.name || "", symptoms: (m.symptoms || []).join(", "), type: m.type || "", route: m.route || "", desese_description: m.desese_description || "" });
+    setEditingId(m._1 || m._id || m.id || null);
+    setForm({
+      name: m.name || "",
+      symptoms: (m.symptoms || []).join(", "),
+      type: m.type || "",
+      route: m.route || "",
+      desese_description: m.desese_description || "",
+      medicines: Array.isArray(m.medicines) ? m.medicines.map(x => ({ ...x })) : [],
+      testAdvice: Array.isArray(m.testAdvice) ? m.testAdvice.map(x => ({ ...x })) : [],
+      medication: m.medication || "",
+      diet: m.diet || "",
+      aliases: (m.aliases || []).join(', '),
+      tags: (m.tags || []).join(', '),
+      followupDays: m.followup?.days ? String(m.followup.days) : "",
+      followupNote: m.followup?.note || "",
+      dose: m.dose || "",
+      frequency: m.frequency || "",
+      duration: m.duration || "",
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Open drawer and focus a specific medicine row inside form
+  const handleEditMedicineRow = (medicineOwner, medIndex) => {
+    // medicineOwner is the parent advice object; medIndex is the index inside its medicines array
+    const id = medicineOwner._1 || medicineOwner._id || medicineOwner.id || null;
+    handleEdit(medicineOwner);
+    setFocusedMedicineIndex(medIndex);
+    setDrawerOpen(true);
+    // scroll/focus will be handled after drawer mounts via useEffect
   };
 
   const handleDelete = async (id) => {
@@ -130,19 +239,143 @@ const MedicineSettings = () => {
 
   const clearForm = () => { setForm(emptyForm); setEditingId(null); setError(""); };
 
+
   return (
     <section className="page">
       <>
-        <div className="settings-page medicine-page">
-          <div className="settings-header">
-            <button onClick={() => navigate(-1)} className="back-btn add-btn">← Go Back</button>
-            <h2>Medicine Catalog</h2>
-            <p className="muted">Create, search and manage medicines used in prescriptions.</p>
+  <div className="settings-page medicine-page" style={{ padding: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button onClick={() => navigate(-1)} className="back-btn">←</button>
+              <div>
+                <h2 style={{ margin: 0 }}>Medicine Catalog</h2>
+                <div className="muted">Create, search and manage medicines used in prescriptions.</div>
+              </div>
+            </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input className="search-input" placeholder="Search by name, symptom or type" value={search} onChange={e => setSearch(e.target.value)} style={{ minWidth: 280 }} />
+              <select onChange={e => setFilterType(e.target.value)} value={filterType} style={{ padding: '6px 8px' }}>
+                <option value="">All Types</option>
+                {Array.from(new Set((medicines || []).map(m => m.type).filter(Boolean))).map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <button className="add-btn" onClick={() => { setForm(emptyForm); setEditingId(null); setDrawerOpen(true); }}>Create Medical Advice</button>
+            </div>
           </div>
 
-          <div className="medicine-grid">
-            <div className="medicine-form-card">
-              <h3>{editingId ? 'Edit Medicine' : 'Add New Medicine'}</h3>
+          {/* Filters & cards */}
+          <div style={{ display: 'flex', gap: 16 }}>
+            <aside style={{ width: 260, padding: 12, background: '#fff', borderRadius: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+              <h4 style={{ marginTop: 0 }}>Filters</h4>
+              <div style={{ marginBottom: 8 }}>
+                <label className="muted">Tag</label>
+                <input placeholder="tag" value={filterTag || ''} onChange={e => setFilterTag(e.target.value)} />
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <label className="muted">Has Tests</label>
+                <select value={filterHasTest || ''} onChange={e => setFilterHasTest(e.target.value)}>
+                  <option value="">Either</option>
+                  <option value="yes">With Tests</option>
+                  <option value="no">No Tests</option>
+                </select>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <button className="clear-btn" onClick={() => { setFilterTag(''); setFilterType(''); setFilterHasTest(''); }}>Reset</button>
+              </div>
+            </aside>
+
+            <main style={{ flex: 1 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+                {loading ? (
+                  Array.from({ length: 6 }).map((_, idx) => (
+                    <div key={`ph-${idx}`} style={{ background: '#fff', padding: 12, borderRadius: 8, boxShadow: '0 1px 6px rgba(0,0,0,0.06)', minHeight: 120 }}>
+                      <div className="muted">Loading...</div>
+                    </div>
+                  ))
+                ) : (
+                  (medicines || [])
+                    .filter(m => !filterType || !filterType.length || (m.type === filterType))
+                    .filter(m => !filterTag || !filterTag.length || (m.tags || []).join(', ').includes(filterTag))
+                    .filter(m => !filterHasTest || filterHasTest === '' || (filterHasTest === 'yes' ? (m.testAdvice && m.testAdvice.length) : !(m.testAdvice && m.testAdvice.length)))
+                    .map((m, idx) => (
+                      <div key={m._id || idx} style={{ background: '#fff', padding: 12, borderRadius: 8, boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ cursor: 'pointer' }} onClick={() => {
+                            const ids = new Set(openCardIds);
+                            const idKey = m._id || idx;
+                            if (ids.has(idKey)) ids.delete(idKey); else ids.add(idKey);
+                            setOpenCardIds(ids);
+                          }}>
+                            <h3 style={{ margin: 0 }}>{m.name || '—'}</h3>
+                            <div className="muted" style={{ fontSize: 13 }}>{(m.symptoms || []).slice(0, 4).join(', ')}</div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button title="Edit" className="secondary" onClick={() => { handleEdit(m); setDrawerOpen(true); }}>✎</button>
+                            <button title="Delete" className="remove-btn" onClick={() => handleDelete(m._id)}>🗑</button>
+                          </div>
+                        </div>
+                        <div style={{ marginTop: 8 }}>
+                          <div><strong>Type:</strong> {m.type || '—'}</div>
+                          <div><strong>Route:</strong> {m.route || '—'}</div>
+                        </div>
+                        <div style={{ marginTop: 10 }}>
+                          <div style={{ fontWeight: 600 }}>Medicines</div>
+                          {Array.isArray(m.medicines) && m.medicines.length ? (
+                            <div style={{ marginTop: 6 }}>
+                              {(m.medicines || []).map((med, mi) => (
+                                <div key={mi} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '6px 8px', borderRadius: 6, background: '#fafafa', marginBottom: 6 }}>
+                                  <div>
+                                    <div style={{ fontWeight: 600 }}>{med.name}</div>
+                                    <div className="muted" style={{ fontSize: 13 }}>{med.type} • {med.dose} • {med.frequency}</div>
+                                  </div>
+                                  <div style={{ display: 'flex', gap: 8 }}>
+                                      {/* Inline medicine edit: open drawer and focus this medicine row */}
+                                      <button className="secondary" title="Edit medicine" onClick={() => handleEditMedicineRow(m, mi)}>✎</button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : <div className="muted">No structured medicines</div>}
+                        </div>
+                        {openCardIds.has(m._id || idx) && (
+                          <div style={{ marginTop: 10 }}>
+                            <div style={{ color: '#334155' }}>{m.desese_description}</div>
+                            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              {(m.tags || []).map(t => <span key={t} style={{ background: '#eef2ff', padding: '4px 8px', borderRadius: 6, fontSize: 12 }}>{t}</span>)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                )}
+              </div>
+
+              <div style={{ marginTop: 12 }}>
+                <div className="pagination">
+                  <button disabled={page <= 1} onClick={() => goToPage(page - 1)}>Prev</button>
+                  {Array.from({ length: totalPages }).slice(0, 7).map((_, idx) => {
+                    const p = idx + 1;
+                    return (
+                      <button key={p} className={p === page ? 'active' : ''} onClick={() => goToPage(p)}>{p}</button>
+                    );
+                  })}
+                  <button disabled={page >= totalPages} onClick={() => goToPage(page + 1)}>Next</button>
+                </div>
+                <div className="footer-note">Showing page {page} of {totalPages}</div>
+              </div>
+            </main>
+          </div>
+        </div>
+        {/* Drawer for create/edit */}
+        {drawerOpen && (
+          <div style={{ position: 'fixed', top: 0, right: 0, width: '480px', height: '100%', background: '#fff', boxShadow: '-4px 0 12px rgba(0,0,0,0.08)', padding: 20, zIndex: 1100, overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0 }}>{editingId ? 'Edit Medicine' : 'Add New Medicine'}</h3>
+              <div>
+                <button className="clear-btn" onClick={() => { setDrawerOpen(false); setForm(emptyForm); setEditingId(null); setFocusedMedicineIndex(null); medicineRowRefs.current = {}; }}>Close</button>
+              </div>
+            </div>
+            <div style={{ marginTop: 12 }}>
+              {/* Insert original form fields here by reusing the form JSX: */}
               <form onSubmit={handleSubmit} className="medicine-form">
                 <label>Name</label>
                 <input name="name" value={form.name} onChange={handleChange} required />
@@ -159,6 +392,77 @@ const MedicineSettings = () => {
                 <label>Description</label>
                 <textarea name="desese_description" value={form.desese_description} onChange={handleChange} rows={4} />
 
+                {/* Structured nested fields */}
+                <h4>Structured Medicines (optional)</h4>
+                {(form.medicines || []).map((m, idx) => (
+                  <div
+                    key={idx}
+                    ref={el => { medicineRowRefs.current[idx] = el; }}
+                    style={{
+                      display: 'flex',
+                      gap: 8,
+                      marginBottom: 6,
+                      alignItems: 'center',
+                      padding: focusedMedicineIndex === idx ? 8 : 0,
+                      borderRadius: focusedMedicineIndex === idx ? 6 : 0,
+                      background: focusedMedicineIndex === idx ? '#fff7ed' : 'transparent',
+                    }}
+                  >
+                    <input placeholder="Name" value={m.name} onChange={e => updateMedicineRow(idx, 'name', e.target.value)} />
+                    <input placeholder="Type" value={m.type} onChange={e => updateMedicineRow(idx, 'type', e.target.value)} />
+                    <input placeholder="Dose" value={m.dose} onChange={e => updateMedicineRow(idx, 'dose', e.target.value)} />
+                    <input placeholder="Freq" value={m.frequency} onChange={e => updateMedicineRow(idx, 'frequency', e.target.value)} />
+                    <input placeholder="Route" value={m.route} onChange={e => updateMedicineRow(idx, 'route', e.target.value)} />
+                    <input placeholder="Duration" value={m.duration} onChange={e => updateMedicineRow(idx, 'duration', e.target.value)} />
+                    <input placeholder="Notes" value={m.notes} onChange={e => updateMedicineRow(idx, 'notes', e.target.value)} />
+                    <button type="button" className="remove-btn" onClick={() => removeMedicineRow(idx)}>Remove</button>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" className="add-btn" onClick={addMedicineRow}>Add Medicine Row</button>
+                </div>
+
+                <h4>Structured Test Advice (optional)</h4>
+                {(form.testAdvice || []).map((t, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+                    <input placeholder="Test Name" value={t.testName} onChange={e => updateTestRow(idx, 'testName', e.target.value)} />
+                    <input placeholder="Type" value={t.testType} onChange={e => updateTestRow(idx, 'testType', e.target.value)} />
+                    <input placeholder="Precautions" value={t.precautions} onChange={e => updateTestRow(idx, 'precautions', e.target.value)} />
+                    <input placeholder="Date" type="date" value={t.testDate} onChange={e => updateTestRow(idx, 'testDate', e.target.value)} />
+                    <button type="button" className="remove-btn" onClick={() => removeTestRow(idx)}>Remove</button>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" className="add-btn" onClick={addTestRow}>Add Test Row</button>
+                </div>
+
+                <label>Medication (text)</label>
+                <textarea name="medication" value={form.medication} onChange={handleChange} rows={2} />
+
+                <label>Diet (text)</label>
+                <textarea name="diet" value={form.diet} onChange={handleChange} rows={2} />
+
+                <label>Aliases (comma separated)</label>
+                <input name="aliases" value={form.aliases} onChange={handleChange} />
+
+                <label>Tags (comma separated)</label>
+                <input name="tags" value={form.tags} onChange={handleChange} />
+
+                <label>Follow-up days</label>
+                <input name="followupDays" value={form.followupDays} onChange={handleChange} type="number" />
+
+                <label>Follow-up note</label>
+                <input name="followupNote" value={form.followupNote} onChange={handleChange} />
+
+                <label>Default Dose</label>
+                <input name="dose" value={form.dose} onChange={handleChange} />
+
+                <label>Default Frequency</label>
+                <input name="frequency" value={form.frequency} onChange={handleChange} />
+
+                <label>Default Duration</label>
+                <input name="duration" value={form.duration} onChange={handleChange} />
+
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
                   <button className="add-btn" type="submit" disabled={saving}>{saving ? 'Saving...' : (editingId ? 'Update' : 'Create')}</button>
                   <button type="button" className="clear-btn" onClick={clearForm}>Clear</button>
@@ -166,55 +470,8 @@ const MedicineSettings = () => {
                 {error && <div className="error">{error}</div>}
               </form>
             </div>
-
-            <div className="medicine-list-card">
-              <div className="list-header">
-                <input className="search-input" placeholder="Search by name, symptom or type" value={search} onChange={e => setSearch(e.target.value)} />
-                <button className="add-btn" onClick={() => { setForm(emptyForm); setEditingId(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>+ New</button>
-              </div>
-
-              <div className="list-body">
-                {loading ? <div>Loading...</div> : (
-                  medicines.length === 0 ? <div className="muted">No medicines found</div> : (
-                    <table className="medicine-table">
-                      <thead>
-                        <tr><th>Name</th><th>Symptoms</th><th>Type</th><th>Route</th><th>Description</th><th>Actions</th></tr>
-                      </thead>
-                      <tbody>
-                        {medicines.map(m => (
-                          <tr key={m._id}>
-                            <td>{m.name}</td>
-                            <td>{(m.symptoms || []).slice(0, 3).join(', ')}</td>
-                            <td>{m.type}</td>
-                            <td>{m.route}</td>
-                            <td title={m.desese_description}>{m.desese_description?.slice(0, 80)}</td>
-                            <td className="td-button-box">
-                              <button className="secondary" onClick={() => handleEdit(m)}>Edit</button>
-                              <button className="remove-btn" onClick={() => handleDelete(m._id)}>Delete</button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )
-                )}
-              </div>
-              <div className="list-footer">
-                <div className="pagination">
-                  <button disabled={page <= 1} onClick={() => goToPage(page - 1)}>Prev</button>
-                  {Array.from({ length: totalPages }).slice(0, 7).map((_, idx) => {
-                    const p = idx + 1;
-                    return (
-                      <button key={p} className={p === page ? 'active' : ''} onClick={() => goToPage(p)}>{p}</button>
-                    );
-                  })}
-                  <button disabled={page >= totalPages} onClick={() => goToPage(page + 1)}>Next</button>
-                </div>
-                <div className="footer-note">Showing page {page} of {totalPages}</div>
-              </div>
-            </div>
           </div>
-        </div>
+        )}
         <footer className="settings-footer">PathologyLab Dashboard • © {new Date().getFullYear()}</footer>
       </>
     </section>
