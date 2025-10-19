@@ -4,7 +4,8 @@ import React, { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { Context } from "../main";
 import { Navigate } from "react-router-dom";
-import { FaSearch, FaTrashAlt, FaEdit, FaEye } from "./DoctorIcons";
+import { FaSearch } from "./DoctorIcons";
+import UserCard from './UserCard';
 import RequirePermission from "./RequirePermission";
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchDoctorsRequest } from '../store/doctorsSlice';
@@ -61,77 +62,48 @@ const Doctors = () => {
         </form>
         <div className="banner">
           {doctors && doctors.length > 0 ? (
-            doctors.map((element) => {
-              return (
-                <div class="doc-card pro-card" key={element._id} style={{
-                  boxShadow: '0 4px 24px rgba(39,23,118,0.12)',
-                  borderRadius: '18px',
-                  background: '#fff',
-                  margin: '1rem',
-                  padding: '1.5rem',
-                  maxWidth: '340px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  transition: 'box-shadow 0.2s',
-                  border: '1px solid #ececec',
-                  position: 'relative'
-                }}>
-                  <div style={{ width: 90, height: 90, borderRadius: '50%', overflow: 'hidden', boxShadow: '0 2px 8px #eee', marginBottom: '1rem', background: '#f7f7fa' }}>
-                    <img src={element.docAvatar && element.docAvatar.url ? element.docAvatar.url : './doc1.jpg'} alt="doctor avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                  <h3 style={{ fontWeight: 700, fontSize: '1.25rem', margin: '0.5rem 0', color: '#271776' }}>{`${element.firstName} ${element.lastName}`}</h3>
-                  <div style={{ fontSize: '0.95rem', color: '#555', marginBottom: '0.5rem' }}>NIC: <span style={{ fontWeight: 500 }}>{element.nic}</span></div>
-                  <div style={{ fontSize: '0.95rem', color: '#555', marginBottom: '0.5rem' }}>Department: <span style={{ fontWeight: 500 }}>{element.doctorDepartment}</span></div>
-                  <div style={{ fontSize: '0.95rem', color: '#555', marginBottom: '0.5rem' }}>Gender: <span style={{ fontWeight: 500 }}>{element.gender}</span></div>
-                  <div style={{ width: '100%', margin: '0.5rem 0', borderTop: '1px solid #ececec' }}></div>
-                  <div style={{ width: '100%', textAlign: 'left', fontSize: '0.92rem', color: '#444', marginBottom: '0.5rem' }}>
-                    <div><span style={{ fontWeight: 600 }}>Email:</span> {element.email}</div>
-                    <div><span style={{ fontWeight: 600 }}>Phone:</span> {element.phone}</div>
-                    <div><span style={{ fontWeight: 600 }}>DOB:</span> {element.dob.substring(0, 10)}</div>
-                  </div>
-                  <RequirePermission allowedRoles={["Admin"]}>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                    <button title="View" onClick={() => setSelectedDoctor(element)} style={{ background: '#f7f7fa', border: 'none', color: '#271776', fontSize: '1.2rem', borderRadius: '8px', padding: '0.5rem 0.7rem', boxShadow: '0 1px 4px #eee', cursor: 'pointer' }}><FaEye /></button>
-                    <button title="Edit" onClick={() => {
-                      setSelectedDoctor(element);
-                      setUpdateFields({
-                        firstName: element.firstName,
-                        lastName: element.lastName,
-                        email: element.email,
-                        phone: element.phone,
-                        nic: element.nic,
-                        dob: element.dob ? element.dob.substring(0,10) : '',
-                        gender: element.gender,
-                        doctorDepartment: element.doctorDepartment,
-                        consultationFee: element.consultationFee || 100
+            doctors.map((element) => (
+              <UserCard
+                key={element._id}
+                user={element}
+                extraLines={[<div key="dept"><strong>Dept:</strong> {element.doctorDepartment}</div>]}
+                onView={(u) => setSelectedDoctor(u)}
+                onEdit={(u) => {
+                  setSelectedDoctor(u);
+                  setUpdateFields({
+                    firstName: u.firstName,
+                    lastName: u.lastName,
+                    email: u.email,
+                    phone: u.phone,
+                    nic: u.nic,
+                    dob: u.dob ? u.dob.substring(0,10) : '',
+                    gender: u.gender,
+                    doctorDepartment: u.doctorDepartment,
+                    consultationFee: u.consultationFee || 100
+                  });
+                  setShowUpdateModal(true);
+                }}
+                onDelete={async (u) => {
+                  if(window.confirm('Are you sure you want to delete this doctor?')) {
+                    try {
+                      await api.delete(`/api/v1/user/user/${u._id}`);
+                      toast.success('Doctor deleted');
+                      // refresh doctors list from server
+                      dispatch(fetchDoctorsRequest({ query: searchTerm }));
+                      await api.post('/api/v1/message/send', {
+                        firstName: u.firstName,
+                        lastName: u.lastName,
+                        email: 'Sohel.Islam@gmail.com',
+                        phone: u.phone,
+                        message: `Doctor ${u.firstName} ${u.lastName} deleted.`
                       });
-                      setShowUpdateModal(true);
-                    }} style={{ background: '#f7f7fa', border: 'none', color: '#271776', fontSize: '1.2rem', borderRadius: '8px', padding: '0.5rem 0.7rem', boxShadow: '0 1px 4px #eee', cursor: 'pointer' }}><FaEdit /></button>
-                    <button title="Delete" onClick={async () => {
-                      if(window.confirm('Are you sure you want to delete this doctor?')) {
-                        try {
-                          await api.delete(`/api/v1/user/user/${element._id}`);
-                          toast.success('Doctor deleted');
-                          // refresh doctors list from server
-                          dispatch(fetchDoctorsRequest({ query: searchTerm }));
-                          await api.post('/api/v1/message/send', {
-                            firstName: element.firstName,
-                            lastName: element.lastName,
-                            email: 'Sohel.Islam@gmail.com',
-                            phone: element.phone,
-                            message: `Doctor ${element.firstName} ${element.lastName} deleted.`
-                          });
-                        } catch (err) {
-                          toast.error('Delete failed');
-                        }
-                      }
-                    }} style={{ background: '#fff0f0', border: 'none', color: '#d32f2f', fontSize: '1.2rem', borderRadius: '8px', padding: '0.5rem 0.7rem', boxShadow: '0 1px 4px #eee', cursor: 'pointer' }}><FaTrashAlt /></button>
-                  </div>
-                  </RequirePermission>
-                </div>
-              );
-            })
+                    } catch (err) {
+                      toast.error('Delete failed');
+                    }
+                  }
+                }}
+              />
+            ))
           ) : (
             <h1>No Registered Doctors Found!</h1>
           )}

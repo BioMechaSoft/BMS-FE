@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import api from '../utils/api';
 import './ReportsPage.css';
+import ReportRow from './ReportRow';
 
 const fmt = (n) => {
   const v = Number(n) || 0;
@@ -25,8 +26,12 @@ const ReportsPage = () => {
   const [doctors, setDoctors] = useState([]);
   const [includeAppointments, setIncludeAppointments] = useState(true);
 
-  const [totals, setTotals] = useState({ totalEarning: 0, totalDue: 0, invoiced: 0 });
+  const [totals, setTotals] = useState({ paid: 0, totalDue: 0, invoiced: 0 });
   const [groups, setGroups] = useState([]);
+  const [usePersisted, setUsePersisted] = useState(false);
+  const [reportEntries, setReportEntries] = useState([]);
+  const [reportPage, setReportPage] = useState(1);
+  const [reportTotal, setReportTotal] = useState(0);
   const [patientsThisMonth, setPatientsThisMonth] = useState(0);
   const [totalAppointments, setTotalAppointments] = useState(0);
 
@@ -64,16 +69,37 @@ const ReportsPage = () => {
       const totalDue = Number(invData.totalDue || 0);
       const invGroups = Array.isArray(invData.groups) ? invData.groups : [];
 
-      // When includeAppointments is true, also fetch hybrid report (accounts for appts without invoices)
-      if (includeAppointments) {
-        const repRes = await api.get(`/api/v1/reports/summary${query.replace('group=', 'groupBy=')}`);
-        const repTotals = repRes.data.totals || { revenue: 0, due: 0 };
-        setTotals({ totalEarning: repTotals.revenue || 0, totalDue: repTotals.due || 0, invoiced: (repTotals.revenue || 0) + (repTotals.due || 0) });
-        setGroups(repRes.data.byPeriod || []);
+      // Choose between persisted per-appointment reports or on-the-fly aggregation
+      if (usePersisted) {
+        const qparts = [];
+        if (s) qparts.push(`start=${encodeURIComponent(s)}`);
+        if (e) qparts.push(`end=${encodeURIComponent(e)}`);
+        if (doctorId) qparts.push(`doctorId=${encodeURIComponent(doctorId)}`);
+        qparts.push(`page=${reportPage}`);
+        qparts.push(`limit=50`);
+        if (opts.q) qparts.push(`q=${encodeURIComponent(opts.q)}`);
+        const qstr = qparts.length ? `?${qparts.join('&')}` : '';
+        const repRes = await api.get(`/api/v1/reports${qstr}`);
+        const body = repRes.data || {};
+        setReportTotal(body.total || 0);
+        setReportEntries(body.entries || []);
+  // aggregate quick totals from returned entries (use 'paid' field)
+  const totPaid = (body.entries || []).reduce((s, r) => s + (Number(r.paid || r.revenue) || 0), 0);
+  const totDue = (body.entries || []).reduce((s, r) => s + (Number(r.due) || 0), 0);
+  setTotals({ paid: totPaid, totalDue: totDue, invoiced: totPaid + totDue });
       } else {
-        setTotals({ totalEarning, totalDue, invoiced: totalEarning + totalDue });
-        // map invGroups -> { period, revenue: totalEarning, due: totalDue }
-        setGroups(invGroups.map(g => ({ period: g.period, revenue: g.totalEarning, due: g.totalDue, count: g.count })));
+        // When includeAppointments is true, also fetch hybrid report (accounts for appts without invoices)
+        if (includeAppointments) {
+          const repRes = await api.get(`/api/v1/reports/summary${query.replace('group=', 'groupBy=')}`);
+          const repTotals = repRes.data.totals || { revenue: 0, due: 0 };
+          // server returns totals.revenue (invoice pipeline) - treat as paid
+          setTotals({ paid: repTotals.revenue || 0, totalDue: repTotals.due || 0, invoiced: (repTotals.revenue || 0) + (repTotals.due || 0) });
+          setGroups(repRes.data.byPeriod || []);
+        } else {
+    setTotals({ paid: totalEarning, totalDue, invoiced: totalEarning + totalDue });
+          // map invGroups -> { period, revenue: totalEarning, due: totalDue }
+          setGroups(invGroups.map(g => ({ period: g.period, revenue: g.totalEarning, due: g.totalDue, count: g.count })));
+        }
       }
 
       // compute patients this month & total appointments (use appointment API as fallback)
@@ -106,6 +132,21 @@ const ReportsPage = () => {
   useEffect(() => { fetchSummary(); }, []);
 
   const downloadCSV = () => {
+    if (usePersisted) {
+  const rows = [['AppointmentId','Date','DoctorId','Amount','Paid','Due','Status','Notes']];
+  reportEntries.forEach(r => rows.push([r.appointmentId, r.appointmentDate ? String(r.appointmentDate).slice(0,10) : '', r.doctorId || '', r.amount||0, r.paid||r.revenue||0, r.due||0, r.status||'', r.notes||'' ]));
+      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""') }"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reports-entries-${(new Date()).toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      return;
+    }
     const rows = [['Period','Paid','Due','Invoiced','Count']];
     groups.forEach(g => rows.push([g.period, g.revenue||g.totalEarning||0, g.due||g.totalDue||0, (Number(g.revenue||g.totalEarning||0)+Number(g.due||g.totalDue||0)), g.count||g.invoices||g.appointments||0]));
     const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""') }"`).join(',')).join('\n');
@@ -155,6 +196,9 @@ const ReportsPage = () => {
             <label style={{display:'flex',alignItems:'center',gap:6}}>
               <input type="checkbox" checked={includeAppointments} onChange={(e)=>setIncludeAppointments(e.target.checked)} /> Include appointments without invoices
             </label>
+            <label style={{display:'flex',alignItems:'center',gap:6}}>
+              <input type="checkbox" checked={usePersisted} onChange={(e)=>{ setUsePersisted(e.target.checked); setReportPage(1); }} /> Use persisted report entries
+            </label>
             <button className="btn" onClick={()=>fetchSummary({ start, end, groupBy, doctorId })} disabled={loading}>{loading ? 'Loading...' : 'Apply'}</button>
             <button className="btn" onClick={downloadCSV}>Export CSV</button>
           </div>
@@ -165,7 +209,7 @@ const ReportsPage = () => {
         <div className="card">
           <p className="label">Total Payments</p>
           <h2 className="value">{fmt(totals.invoiced)}</h2>
-          <small>Paid: {fmt(totals.totalEarning)} • Due: {fmt(totals.totalDue)}</small>
+          <small>Paid: {fmt(totals.paid)} • Due: {fmt(totals.totalDue)}</small>
         </div>
 
         <div className="card">

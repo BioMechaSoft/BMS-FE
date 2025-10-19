@@ -103,12 +103,15 @@ const InvoiceSettings = () => {
           </div>
           <div style={{ maxHeight: '60vh', overflowY: 'auto', border: '1px solid #eee', padding:8 }}>
             {loading ? <div>Loading...</div> : (
-              invoices.map(inv => (
+              invoices.map(inv => {
+                const paid = (inv.payments || []).reduce((s, p) => s + (Number(p.amount || p) || 0), 0);
+                const due = (Number(inv.total) || 0) - paid;
+                return (
                 <div key={inv._id || inv.id} style={{ borderBottom:'1px solid #f0f0f0', padding:8, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                   <div>
                     <div style={{ fontWeight:700 }}>{inv.invoiceNumber}</div>
                     <div style={{ color:'#666' }}>Patient: {inv.patient?._id || inv.patient}</div>
-                    <div style={{ color:'#666' }}>Amount: {inv.total}</div>
+                    <div style={{ color:'#666' }}>Amount: {inv.total} • Paid: {paid} • Due: {due}</div>
                   </div>
                   <div style={{ display:'flex', gap:8 }}>
                     <button onClick={()=>handleEdit(inv)}>Edit</button>
@@ -116,7 +119,7 @@ const InvoiceSettings = () => {
                     <button onClick={()=>handleDelete(inv._id || inv.id)}>Delete</button>
                   </div>
                 </div>
-              ))
+              )})
             )}
           </div>
         </div>
