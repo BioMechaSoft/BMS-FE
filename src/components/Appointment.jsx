@@ -546,9 +546,79 @@ const Appointment = () => {
                   <div className=" inner-box-of-lnr">
                     <label htmlFor="">Enter your age:</label>
                     <div className="age-grid">
-                      <input type="number" placeholder="Years" />
-                      <input type="number" placeholder="Months" />
-                      <input type="number" placeholder="days" />
+                      <input
+                      type="number"
+                      placeholder="Years"
+                      min={0}
+                      value={ageYears}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/[^0-9]/g, '');
+                        setAgeYears(v);
+                        // compute DOB from parts
+                        const y = Number(v) || 0;
+                        const m = Number(ageMonths) || 0;
+                        const d = Number(ageDays) || 0;
+                        const computed = (() => {
+                          // subtract y/m/d from today
+                          const dt = new Date();
+                          dt.setFullYear(dt.getFullYear() - y);
+                          // subtract months
+                          const month = dt.getMonth() - m;
+                          dt.setMonth(month);
+                          // subtract days
+                          dt.setDate(dt.getDate() - d);
+                          dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+                          return dt.toISOString().slice(0,10);
+                        })();
+                        setDob(computed);
+                      }}
+                      style={{ width: '6rem' }}
+                    />
+                      {/* <input type="number" placeholder="Years" /> */}
+                      {/* <input type="number" placeholder="Months" /> */}
+                      <input
+                      type="number"
+                      placeholder="Months"
+                      min={0}
+                      max={11}
+                      value={ageMonths}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/[^0-9]/g, '');
+                        setAgeMonths(v);
+                        const y = Number(ageYears) || 0;
+                        const m = Number(v) || 0;
+                        const d = Number(ageDays) || 0;
+                        const dt = new Date();
+                        dt.setFullYear(dt.getFullYear() - y);
+                        dt.setMonth(dt.getMonth() - m);
+                        dt.setDate(dt.getDate() - d);
+                        dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+                        setDob(dt.toISOString().slice(0,10));
+                      }}
+                      style={{ width: '6rem' }}
+                    />
+                      {/* <input type="number" placeholder="days" /> */}
+                      <input
+                      type="number"
+                      placeholder="Days"
+                      min={0}
+                      max={31}
+                      value={ageDays}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/[^0-9]/g, '');
+                        setAgeDays(v);
+                        const y = Number(ageYears) || 0;
+                        const m = Number(ageMonths) || 0;
+                        const d = Number(v) || 0;
+                        const dt = new Date();
+                        dt.setFullYear(dt.getFullYear() - y);
+                        dt.setMonth(dt.getMonth() - m);
+                        dt.setDate(dt.getDate() - d);
+                        dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+                        setDob(dt.toISOString().slice(0,10));
+                      }}
+                      style={{ width: '6rem' }}
+                    />
                     </div>
                   </div>
                   <div className="address-box inner-box-of-lnr">

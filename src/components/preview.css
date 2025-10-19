@@ -183,6 +183,7 @@
 .lCol p, .rightCol p {
   margin: 0.18rem 0;
   font-size: 1.01rem;
+  font-weight: 500;
 }
 
 .rightCol {
@@ -366,7 +367,10 @@
 .rightCol { 
   text-align: right; 
 }
-
+strong{
+  color: #1a237e;
+  font-weight: bold;
+}
 .mdata-1r { 
   display: flex; 
   gap: 1rem; 

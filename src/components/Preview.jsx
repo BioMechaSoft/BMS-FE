@@ -32,6 +32,7 @@ const Preview = () => {
         dispatch(fetchPreviewRequest({ patientId }));
         return () => { dispatch(resetPreview()); };
     }, [patientId]);
+    console.log(preview)
 
 
     // PDF Download (A4, margin)
@@ -122,6 +123,7 @@ const Preview = () => {
                             <div className="clinic-details">
                                 {clinic.address && <p>{clinic.address}</p>}
                                 {doctor?.visitingHours && <p>{doctor.visitingHours}</p>}
+                                {patient.appointmentId && <p className="hide-on-print"><strong>Appointment:</strong> {patient.appointmentId}</p>}
                             </div>
                         </header>
 
@@ -130,9 +132,9 @@ const Preview = () => {
                             <div className="outer-data-box patient-box">
                                 <div className="pdata">
                                         <div className="lCol">
-                                            <p><strong>Name:</strong> {patient.firstName} {patient.lastName}</p>
+                                            <p><strong>Name:</strong> {patient.name?patient.name:`${patient?.firstName} ${patient?.lastName}`}</p>
                                             {patient.nic && <p className="hide-on-print"><strong>NIC:</strong> {patient.nic}</p>}
-                                            {patient.email && <p><strong>Email:</strong> {patient.email}</p>}
+                                            {/* {patient.email && <p><strong>Email:</strong> {patient.email}</p>} */}
                                             {patient.phone && <p><strong>Phone:</strong> {patient.phone}</p>}
                                             {patient.gender && <p><strong>Gender:</strong> {patient.gender}</p>}
                                             {(patient.dob || patient.age) && (
@@ -143,12 +145,20 @@ const Preview = () => {
                                         <div className="rightCol">
                                         <p><strong>Date:</strong> {formatDate(patient.updatedAt)}</p>
                                         {patient.weight && <p><strong>Weight:</strong> {patient.weight}</p>}
-                                        {patient.appointmentId && <p className="hide-on-print"><strong>Appointment:</strong> {patient.appointmentId}</p>}
+                                        {/* {patient.appointmentId && <p className="hide-on-print"><strong>Appointment:</strong> {patient.appointmentId}</p>} */}
                                         {patient.department && <p><strong>Department:</strong> {patient.department}</p>}
                                     </div>
                                 </div>
                             </div>
 
+                            <div className='diagnosis-box'>
+                                    <h4>{report.diagnosys.length>=0?"Diagnosis":"No Diagnosis done"}</h4>
+                                    {report?.diagnosys && (
+                                        <ul className="diagnosis-list">
+                                            {Object.entries(report.diagnosys).map(([k, v]) => v && <li key={k}><strong>{k}:</strong> {v}</li>)}
+                                        </ul>
+                                    )}
+                                </div>
                             {/* Prescription Info Section */}
                             <div className="mdata outer-data-box prescription-box">
                                 {report?.initialComplain && (
@@ -165,14 +175,7 @@ const Preview = () => {
                                         )}
                                     </div>
                                 )}
-                                <div className='diagnosis-box'>
-                                    <h4>Diagnosis</h4>
-                                    {report?.diagnosys && (
-                                        <ul className="diagnosis-list">
-                                            {Object.entries(report.diagnosys).map(([k, v]) => v && <li key={k}><strong>{k}:</strong> {v}</li>)}
-                                        </ul>
-                                    )}
-                                </div>
+                                
                                 <div className='medic-details'>
                                     <div className="medic-header">
                                         <div>Sl</div>
