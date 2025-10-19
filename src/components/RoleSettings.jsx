@@ -21,7 +21,6 @@ const RoleSettings = () => {
   const { data } = await api.get(`/api/v1/user/all`);
       setUsers(data.users || []);
     } catch (err) {
-      console.error(err);
       toast.error(err?.response?.data?.message || "Failed to load users");
     } finally {
       setLoading(false);

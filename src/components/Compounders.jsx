@@ -24,8 +24,8 @@ const Compounders = () => {
       try {
         const { data } = await api.get('/api/v1/user/compounders');
         setCompounders(data.compounders || []);
-      } catch (err) {
-        console.error('Failed to fetch compounders', err);
+        } catch (err) {
+        toast.error(err?.response?.data?.message || 'Failed to fetch compounders');
       }
     };
     fetchCompounders();

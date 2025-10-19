@@ -123,7 +123,7 @@ const ReportsPage = () => {
       setPatientsThisMonth(patientSet.size);
 
     } catch (err) {
-      console.error('Failed to load report summary', err);
+      toast.error('Failed to load report summary');
     } finally {
       setLoading(false);
     }

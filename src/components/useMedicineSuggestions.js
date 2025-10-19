@@ -15,7 +15,24 @@ export default function useMedicineSuggestions(opts = {}) {
         const { data } = await api.get(`/api/v1/medical`, { params: { page, limit } });
         // backend may return { advices } or { medicines } or { data }
         const list = data.advices || data.medicines || data.items || data.data || [];
-        if (mounted) setMedicines(Array.isArray(list) ? list : []);
+        let normalized = Array.isArray(list) ? list : [];
+        // If advices contain nested `medicines`, flatten them into separate entries
+        const flatMeds = [];
+        normalized.forEach((it) => {
+          if (Array.isArray(it.medicines) && it.medicines.length) {
+            it.medicines.forEach((m) => {
+              flatMeds.push({
+                ...m,
+                // carry parent context for potential scoring
+                _adviceName: it.name,
+                _adviceSymptoms: it.symptoms || [],
+              });
+            });
+          }
+        });
+        // merged list keeps advices as well (so callers can prefer structured advices)
+        const merged = [...normalized, ...flatMeds];
+        if (mounted) setMedicines(merged);
       } catch (e) {
         if (mounted) setMedicines([]);
       } finally {

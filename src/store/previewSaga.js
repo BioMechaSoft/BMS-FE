@@ -5,10 +5,11 @@ import { fetchPreviewRequest, fetchPreviewSuccess, fetchPreviewFailure } from '.
 function* fetchPreviewSaga(action) {
   try {
     const { patientId } = action.payload;
-    const { data: ad } = yield call(api.get, `/api/v1/appointment/patient/${patientId}`);
+  const { data: ad } = yield call(api.get, `/api/v1/appointment/patient/${patientId}`);
     const appts = ad.appointments || [];
     let patient = null;
     let doctor = null;
+  // fetched appointments (if any)
     if (appts.length > 0) {
       appts.sort((a, b) => new Date(b.appointment_date) - new Date(a.appointment_date));
       const latest = appts[0];
@@ -16,6 +17,7 @@ function* fetchPreviewSaga(action) {
         _id: latest.patientId || patientId,
         firstName: latest.firstName || latest.patientName || '',
         lastName: latest.lastName || '',
+        name: latest?.name,
         nic: latest.nic || latest.NIC || '',
         email: latest.email || '',
         phone: latest.phone || latest.contact || '',
@@ -40,6 +42,39 @@ function* fetchPreviewSaga(action) {
         } catch (e) {
           doctor = null;
         }
+      }
+    }
+    // If no appointments returned, try fetching patient directly (fallback)
+    if (!patient && appts.length === 0) {
+      try {
+        const { data: ud } = yield call(api.get, `/api/v1/user/patient/${patientId}`);
+        const u = ud.patient || ud.user || null;
+        if (u) {
+          patient = {
+            _id: u._id,
+            firstName: u.firstName || '',
+            lastName: u.lastName || '',
+            name: u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+            nic: u.nic || u.NIC || '',
+            email: u.email || '',
+            phone: u.phone || u.contact || '',
+            dob: u.dob || null,
+            gender: u.gender || '',
+            updatedAt: u.updatedAt || null,
+            weight: u.weight || null,
+            report: u.report || [],
+            appointmentId: '',
+            appointment_date: '',
+            examinedBy: '',
+            reportdate: '',
+            address: u.address || '',
+            department: u.department || '',
+            price: 0,
+            paymentStatus: '',
+          };
+        }
+      } catch (e) {
+        // fallback patient fetch failed - swallow to allow saga to continue
       }
     }
     yield put(fetchPreviewSuccess({ patient, doctor }));

@@ -8,8 +8,16 @@ const defaultCustom = {
   accent: '#3939d9f2',
 };
 
+const normalize = (t) => {
+  if (!t) return 'theme-light';
+  if (t === 'light') return 'theme-light';
+  if (t === 'dark') return 'theme-dark';
+  return t;
+};
+
 const getInitial = () => {
-  const theme = localStorage.getItem('dashboard-theme') || 'light';
+  const themeRaw = localStorage.getItem('dashboard-theme');
+  const theme = normalize(themeRaw || 'theme-light');
   let custom = defaultCustom;
   try {
     const stored = localStorage.getItem('dashboard-theme-custom');
@@ -23,8 +31,10 @@ const themeSlice = createSlice({
   initialState: getInitial(),
   reducers: {
     setTheme(state, action) {
-      state.theme = action.payload;
-      localStorage.setItem('dashboard-theme', action.payload);
+      // Accept both legacy and new values; normalize before storing
+      const t = normalize(action.payload);
+      state.theme = t;
+      localStorage.setItem('dashboard-theme', t);
     },
     setCustomTheme(state, action) {
       state.custom = { ...state.custom, ...action.payload };
