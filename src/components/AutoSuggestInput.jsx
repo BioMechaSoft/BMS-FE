@@ -15,6 +15,12 @@ export default function AutoSuggestInput({ value, onChange, suggestions = [], pl
     return parts[parts.length - 1].trim();
   };
 
+  const labelOf = (item) => {
+    if (item == null) return '';
+    if (typeof item === 'string') return item;
+    return item.name || item.label || item.value || String(item);
+  };
+
   useEffect(() => {
     if (!show) return;
     function handle(e) {
@@ -27,7 +33,7 @@ export default function AutoSuggestInput({ value, onChange, suggestions = [], pl
   useEffect(() => {
     const last = getLastToken(value);
     if (!last) setFiltered(suggestions);
-    else setFiltered(suggestions.filter(s => s.toLowerCase().includes(last.toLowerCase())));
+    else setFiltered(suggestions.filter(s => labelOf(s).toLowerCase().includes(last.toLowerCase())));
     setHighlight(0);
   }, [value, suggestions, single]);
 
@@ -43,20 +49,23 @@ export default function AutoSuggestInput({ value, onChange, suggestions = [], pl
     }
   }
 
-  function selectSuggestion(s) {
+  function selectSuggestion(item) {
+    const label = labelOf(item);
     if (single) {
-      onChange({ target: { value: s } });
-      if (onSelect) onSelect(s);
+      onChange({ target: { value: label } });
+      if (onSelect) onSelect(item, label);
       setShow(false);
       setHighlight(0);
       return;
     }
     // Replace last token with selected suggestion, add comma
     let parts = value.split(',');
-    parts[parts.length - 1] = s;
+    parts[parts.length - 1] = label;
     let newVal = parts.map(p => p.trim()).filter(Boolean).join(', ');
     if (!newVal.endsWith(',')) newVal += ', ';
     onChange({ target: { value: newVal } });
+    // notify caller that a suggestion was selected and provide the new input value
+    if (onSelect) onSelect(item, newVal);
     setShow(true); // keep open for next
     setHighlight(0);
   }
@@ -77,13 +86,20 @@ export default function AutoSuggestInput({ value, onChange, suggestions = [], pl
       />
       {show && filtered.length > 0 && (
         <ul className="suggestion-list">
-          {filtered.map((s, i) => (
+          {filtered.map((it, i) => (
             <li
-              key={s}
+              key={i}
               className={i === highlight ? "highlight" : ""}
-              onMouseDown={() => selectSuggestion(s)}
+              onMouseDown={() => selectSuggestion(it)}
             >
-              {s}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>{labelOf(it)}</span>
+                {(it && typeof it === 'object' && (it._score || it._matchedAll)) && (
+                  <small style={{ marginLeft: 8, color: it._matchedAll ? '#064e3b' : '#6b7280' }}>
+                    {it._matchedAll ? 'Exact' : `Score ${it._score || 0}`}
+                  </small>
+                )}
+              </div>
             </li>
           ))}
         </ul>

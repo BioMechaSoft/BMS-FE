@@ -101,7 +101,7 @@ const Appointment = () => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
         e.preventDefault();
         setDownloadInvoice(true);
-        // submit after setting state (give React a tick)
+        //Todo: submit after setting state (give React a tick)
         setTimeout(() => {
           handleAppointment();
         }, 50);

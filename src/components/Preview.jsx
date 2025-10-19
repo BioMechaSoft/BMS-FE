@@ -3,7 +3,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import "./preview.css";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchPreviewRequest, resetPreview } from '../store/previewSlice';
 import { dobToAge } from '../utils/ageUtils';
@@ -13,7 +13,12 @@ import { Context } from '../main';
 const formatDate = (date) => date ? new Date(date).toLocaleDateString() : '';
 
 const Preview = () => {
-    const { patientId } = useParams();
+    const { patientId: routePatientId } = useParams();
+    const location = useLocation();
+    // Preview may receive either a patientId route param or an appointmentId via query or props
+    const qs = new URLSearchParams(location.search);
+    const appointmentIdFromQuery = qs.get('appointmentId') || qs.get('apptId') || null;
+    const patientId = routePatientId || appointmentIdFromQuery;
     const dispatch = useDispatch();
     const preview = useSelector(s => s.preview);
     const patient = preview.patient;
@@ -28,11 +33,18 @@ const Preview = () => {
 
 
     useEffect(() => {
-        if (!patientId) return;
+        console.log('[Preview] routePatientId:', routePatientId, 'appointmentIdFromQuery:', appointmentIdFromQuery);
+        if (!patientId) {
+            console.warn('[Preview] No patientId or appointmentId available in route/query.');
+            return;
+        }
+        // try to detect whether this is an appointment id (24 hex chars) or a patient id
+        const isMongoId = /^[0-9a-fA-F]{24}$/.test(patientId);
+        console.log('[Preview] dispatching fetchPreviewRequest with id:', patientId, 'isMongoId?', isMongoId);
         dispatch(fetchPreviewRequest({ patientId }));
         return () => { dispatch(resetPreview()); };
-    }, [patientId]);
-    console.log(preview)
+    }, [routePatientId, appointmentIdFromQuery]);
+    console.log('[Preview] preview slice:', preview)
 
 
     // PDF Download (A4, margin)
