@@ -531,42 +531,8 @@ const Appointment = () => {
               )}
             </div>
             {step === 1 && (
-              <div>
-                <div className="lnr-input-box">
-                  <div style={{ flex:"1", width:"100%" }} ref={suggestRef}>
-                    <input
-                      type="text"
-                      placeholder="Full Name"
-                      style={{width:"100%"}}
-                      value={name}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        setName(v);
-                        // debounce suggestions
-                        if (suggestTimer.current)
-                          clearTimeout(suggestTimer.current);
-                        if (!v || v.trim().length < 2) {
-                          setPatientSuggestions([]);
-                          setShowPatientSuggestions(false);
-                          return;
-                        }
-                        suggestTimer.current = setTimeout(async () => {
-                          try {
-                            const q = encodeURIComponent(v);
-                            const { data } = await api.get(
-                              `/api/v1/appointment/suggest`,
-                              { params: { q, limit: 8 } }
-                            );
-                            setPatientSuggestions(data.patients || []);
-                            setShowPatientSuggestions(true);
-                          } catch (err) {
-                            setPatientSuggestions([]);
-                            setShowPatientSuggestions(false);
-                          }
-                        }, 300);
-                      }}
-                    />
-                    {showPatientSuggestions &&
+              <div style={{position: "relative"}}>
+                {showPatientSuggestions &&
                       patientSuggestions &&
                       patientSuggestions.length > 0 && (
                         <div
@@ -574,6 +540,7 @@ const Appointment = () => {
                             position: "absolute",
                             left: 0,
                             right: 0,
+                            top: "3rem",
                             background: "#fff",
                             boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                             zIndex: 1200,
@@ -626,7 +593,42 @@ const Appointment = () => {
                             </div>
                           ))}
                         </div>
-                      )}
+                    )}
+                <div className="lnr-input-box">
+                  <div style={{ flex:"1", width:"100%" }} ref={suggestRef}>
+                    <input
+                      type="text"
+                      placeholder="Full Name"
+                      style={{width:"100%"}}
+                      value={name}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setName(v);
+                        // debounce suggestions
+                        if (suggestTimer.current)
+                          clearTimeout(suggestTimer.current);
+                        if (!v || v.trim().length < 2) {
+                          setPatientSuggestions([]);
+                          setShowPatientSuggestions(false);
+                          return;
+                        }
+                        suggestTimer.current = setTimeout(async () => {
+                          try {
+                            const q = encodeURIComponent(v);
+                            const { data } = await api.get(
+                              `/api/v1/appointment/suggest`,
+                              { params: { q, limit: 8 } }
+                            );
+                            setPatientSuggestions(data.patients || []);
+                            setShowPatientSuggestions(true);
+                          } catch (err) {
+                            setPatientSuggestions([]);
+                            setShowPatientSuggestions(false);
+                          }
+                        }, 300);
+                      }}
+                    />
+                    
                   </div>
                   <select
                     value={gender}
