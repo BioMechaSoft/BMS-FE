@@ -332,7 +332,7 @@ body {
 .sidebar .links { display:flex; flex-direction:column; gap:1.875rem }
 
 @media (max-width: 485px) {
-  .sidebar { width: 4rem; background: #3939d9f2;}
+  .sidebar { width: 4rem; background: #3939d9f2; z-index: 1;}
 }
 
 .wrapper {
@@ -359,6 +359,7 @@ body {
     left: 12px;
     font-size: 1.5rem;
     background-color: #3939d9f2;
+    z-index: 1;
   }
   
   .show {

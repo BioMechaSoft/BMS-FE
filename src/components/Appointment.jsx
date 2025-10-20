@@ -651,7 +651,7 @@ const Appointment = () => {
                         value={ageYears}
                         onChange={(e) => {
                           const v = e.target.value.replace(/[^0-9]/g, "");
-                          setAgeYears(v);
+                          setAgeYears(v && v>150 ? 150:v);
                           // compute DOB from parts
                           const y = Number(v) || 0;
                           const m = Number(ageMonths) || 0;

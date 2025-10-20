@@ -73,7 +73,7 @@ const Prescription = ({ patientId, onClose }) => {
   const [doctorContact, setDoctorContact] = useState("");
   const [doctorsList, setDoctorsList] = useState([]);
 
-  const steps = ["Patient", "Vitals & History", "Medicines", "Advice", "Review"];
+  const steps = ["Complain & Medicines", "Medical History"];
   const rootRef = React.useRef(null);
   const keysPressed = React.useRef(new Set());
 
@@ -640,27 +640,12 @@ const Prescription = ({ patientId, onClose }) => {
           <div className="steps-slider">
             <div className="slides" style={{ display: 'flex', width: `${steps.length * 100}%`, transform: `translateX(-${currentStep * (100/steps.length)}%)`, transition: 'transform 320ms ease' }}>
 
-              {/* 0 - Patient */}
+              
+              {/* 0 - Complain & Advice */}
               <div className="step-slide" style={{ flex: `0 0 ${100/steps.length}%` }}>
                 <div className={`form-step ${currentStep === 0 ? 'active' : ''}`}>
-                  <div className="form-group"><label>NIC</label><input value={nic} readOnly disabled /></div>
-                  <div className="form-group"><label>Patient ID</label><input value={patientId} readOnly disabled /></div>
-                  <div className="form-group"><label>Booked By</label><input value={bookedBy} readOnly disabled /></div>
-                  <div className="form-group">
-                    <label>Doctor</label>
-                    <select value={doctorId} onChange={e => setDoctorId(e.target.value)}>
-                      <option value="">-- Select Doctor --</option>
-                      {doctorsList.map(d => <option key={d._id || d.id} value={d._1 || d.id}>{d.name || d.fullName || d.displayName}</option>)}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* 1 - Vitals & History */}
-              <div className="step-slide" style={{ flex: `0 0 ${100/steps.length}%` }}>
-                <div className={`form-step ${currentStep === 1 ? 'active' : ''}`}>
                   <div className="form-group full-width"><label>Initial Complain</label>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
                       <div style={{ display: 'flex', width: '100%', gap: '0.5rem', alignItems: 'center' }}>
                         <AutoSuggestInput
                           style={{ flex: 1 }}
@@ -705,8 +690,8 @@ const Prescription = ({ patientId, onClose }) => {
                             else autoPopulateFromComplaint(newVal || item, false, true);
                           }}
                         />
-                        <button type="button" className="add-btn" onClick={() => autoPopulateFromComplaint(initialComplain, true)} disabled={!initialComplain || initialComplain.trim().length < 2}>{autoPopulating ? 'Populating...' : 'Auto-populate'}</button>
-                        <button type="button" className="btn secondary" onClick={async () => {
+                        <button type="button" className="add-btn" style={{minWidth:"fit-content"}} onClick={() => autoPopulateFromComplaint(initialComplain, true)} disabled={!initialComplain || initialComplain.trim().length < 2}>{autoPopulating ? 'Populating...' : 'Auto-populate'}</button>
+                        <button type="button" className="btn secondary" style={{minWidth:"fit-content"}} onClick={async () => {
                           // call analyze on selected complaints/symptoms
                           const symptoms = selectedComplaints.length ? selectedComplaints.flatMap(c => (c.symptoms || (typeof c === 'string' ? [c] : []))) : (initialComplain ? [initialComplain] : []);
                           try {
@@ -755,21 +740,10 @@ const Prescription = ({ patientId, onClose }) => {
                       </div>
                     </div>
                   </div>
-                  <div className="form-group full-width"><label>Medical History</label><input value={medicalHistory} onChange={e => setMedicalHistory(e.target.value)} /></div>
-                  <div className="form-row">
-                    <div className="form-group"><label>BP</label><input value={diagnosys.BP} onChange={e => setDiagnosys({ ...diagnosys, BP: e.target.value })} /></div>
-                    <div className="form-group"><label>Diabetics</label><input value={diagnosys.Diabetics} onChange={e => setDiagnosys({ ...diagnosys, Diabetics: e.target.value })} /></div>
-                    <div className="form-group"><label>SPO2</label><input value={diagnosys.SPO2} onChange={e => setDiagnosys({ ...diagnosys, SPO2: e.target.value })} /></div>
-                    <div className="form-group"><label>Height</label><input value={diagnosys.Height} onChange={e => setDiagnosys({ ...diagnosys, Height: e.target.value })} /></div>
-                    <div className="form-group"><label>Weight</label><input value={diagnosys.Weight} onChange={e => setDiagnosys({ ...diagnosys, Weight: e.target.value })} /></div>
-                    <div className="form-group"><label>Others</label><input value={diagnosys.Others} onChange={e => setDiagnosys({ ...diagnosys, Others: e.target.value })} /></div>
-                  </div>
+                  
                 </div>
-              </div>
-
-              {/* 2 - Medicines */}
-              <div className="step-slide" style={{ flex: `0 0 ${100/steps.length}%` }}>
-                <div className={`form-step ${currentStep === 2 ? 'active full-step' : ''}`}>
+                <br /><br />
+                <div className={`form-step ${currentStep === 1 ? 'active full-step' : ''}`}>
                   <div className="form-group full-width medicine-section">
                     <label>Medicine Advice</label>
                     <div className="medicines-list">
@@ -845,11 +819,8 @@ const Prescription = ({ patientId, onClose }) => {
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* 3 - Advice */}
-              <div className="step-slide" style={{ flex: `0 0 ${100/steps.length}%` }}>
-                <div className={`form-step ${currentStep === 3 ? 'active full-step' : ''}`}>
+                <br /><br />
+                <div className={`form-step ${currentStep === 2 ? 'active full-step' : ''}`}>
                   <div className="form-row" style={{ marginBottom: 12 }}>
                     {["Test Advice", "Medication", "Diet"].map((testType, index) => (
                       <label key={index} style={{ marginRight: "1rem" }}>
@@ -927,74 +898,18 @@ const Prescription = ({ patientId, onClose }) => {
                 </div>
               </div>
 
-              {/* 4 - Review */}
+              {/* 1 - Medical History */}
               <div className="step-slide" style={{ flex: `0 0 ${100/steps.length}%` }}>
-                <div className={`form-step ${currentStep === 4 ? 'active' : ''}`}>
-                  <div className="review-card full-width">
-                    <h4>Review Prescription</h4>
-                    <p><strong>NIC:</strong> {nic}</p>
-                    <p><strong>Patient ID:</strong> {patientId}</p>
-                    <p><strong>Booked By:</strong> {bookedBy}</p>
-                    <p><strong>Doctor:</strong> {doctorsList.find(d => (d._id || d.id) === doctorId)?.name || doctorContact}</p>
-                    <p><strong>Initial Complain:</strong> {initialComplain}</p>
-                    <p><strong>Medical History:</strong> {medicalHistory}</p>
-                    <p><strong>Diagnosys:</strong></p>
-                    <ul>{Object.entries(diagnosys).map(([k, v]) => <li key={k}><strong>{k}:</strong> {v}</li>)}</ul>
-                    <p><strong>Medicines:</strong></p>
-                    {medicineAdvice.length === 0 ? <p className="muted">No medicines added</p> : (
-                      <ul>{medicineAdvice.map((m, i) => <li key={i}>{m.name} — {m.dose} — {m.frequency} — {m.duration}</li>)}</ul>
-                    )}
-                    {(() => {
-                      const reviewAdvice = {};
-                      if (selectedTestTypes.includes("Test Advice")) reviewAdvice.testAdvice = testAdviceRows.filter(r => r.testName && r.testName.trim() !== "");
-                      if (selectedTestTypes.includes("Medication")) reviewAdvice.medication = medicationAdvice;
-                      if (selectedTestTypes.includes("Diet")) reviewAdvice.diet = dietAdvice;
-                      return (
-                        <>
-                          {reviewAdvice.testAdvice && reviewAdvice.testAdvice.length > 0 && (
-                            <div>
-                              <h4>Test Advice</h4>
-                              <table className="test-advice-table">
-                                <thead>
-                                  <tr>
-                                    <th>Test Name</th>
-                                    <th>Test Type</th>
-                                    <th>Precautions</th>
-                                    <th>Test Date</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {reviewAdvice.testAdvice.map((row, idx) => (
-                                    <tr key={idx}>
-                                      <td>{row.testName}</td>
-                                      <td>{row.testType}</td>
-                                      <td>{row.precautions}</td>
-                                      <td>{row.testDate}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                          {reviewAdvice.medication && (
-                            <div>
-                              <h4>Medication Advice</h4>
-                              <p>{reviewAdvice.medication}</p>
-                            </div>
-                          )}
-                          {reviewAdvice.diet && (
-                            <div>
-                              <h4>Diet Advice</h4>
-                              <p>{reviewAdvice.diet}</p>
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
+                <div className="form-group full-width"><label>Medical History</label><input value={medicalHistory} onChange={e => setMedicalHistory(e.target.value)} /></div>
+                  <div className="form-row">
+                    <div className="form-group"><label>BP</label><input value={diagnosys.BP} onChange={e => setDiagnosys({ ...diagnosys, BP: e.target.value })} /></div>
+                    <div className="form-group"><label>Diabetics</label><input value={diagnosys.Diabetics} onChange={e => setDiagnosys({ ...diagnosys, Diabetics: e.target.value })} /></div>
+                    <div className="form-group"><label>SPO2</label><input value={diagnosys.SPO2} onChange={e => setDiagnosys({ ...diagnosys, SPO2: e.target.value })} /></div>
+                    <div className="form-group"><label>Height</label><input value={diagnosys.Height} onChange={e => setDiagnosys({ ...diagnosys, Height: e.target.value })} /></div>
+                    <div className="form-group"><label>Weight</label><input value={diagnosys.Weight} onChange={e => setDiagnosys({ ...diagnosys, Weight: e.target.value })} /></div>
+                    <div className="form-group"><label>Others</label><input value={diagnosys.Others} onChange={e => setDiagnosys({ ...diagnosys, Others: e.target.value })} /></div>
                   </div>
-                </div>
               </div>
-
             </div>
           </div>
         </div>

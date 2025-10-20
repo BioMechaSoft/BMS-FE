@@ -30,6 +30,8 @@
 .prescription {
   width: 100%;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   padding: 2.5rem 0;
@@ -79,17 +81,17 @@
 
 /* A4 paper styling for clean print/PDF output */
 .a4-paper {
-  width: 280mm !important;
-  min-height: 297mm !important;
+  /* width: 100% !important;
+  height: 100% !important;
   background: #fff !important;
   margin: 0 auto !important;
-  padding: 15mm !important;
+  padding: 2% !important;
   box-shadow: none !important;
   border-radius: 0 !important;
   border: none !important;
   overflow: visible !important;
   color: #111;
-  font-size: 12pt;
+  font-size: 12pt; */
 }
 
 .a4-paper .modern-header { grid-template-columns: 1.5fr 5rem 1fr; gap: 1rem; }

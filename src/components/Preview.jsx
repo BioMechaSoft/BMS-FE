@@ -10,7 +10,7 @@ import { dobToAge } from '../utils/ageUtils';
 import { Context } from '../main';
 
 // Helper: format date
-const formatDate = (date) => date ? new Date(date).toLocaleDateString() : '';
+const formatDate = (date) => date ? new Date(date).toISOString().slice(0,10) : '';
 const Preview = () => {
     const { patientId: routePatientId } = useParams();
     const location = useLocation();
@@ -164,10 +164,10 @@ const Preview = () => {
                             </div>
 
                             <div className='diagnosis-box'>
-                                    <h4>{report.diagnosys.length>=0?"Diagnosis":"No Diagnosis done"}</h4>
+                                    <h4>{report?.diagnosys?.length>=0?"Diagnosis":"No Diagnosis done"}</h4>
                                     {report?.diagnosys && (
                                         <ul className="diagnosis-list">
-                                            {Object.entries(report.diagnosys).map(([k, v]) => v && <li key={k}><strong>{k}:</strong> {v}</li>)}
+                                            {Object.entries(report?.diagnosys).map(([k, v]) => v && <li key={k}><strong>{k}:</strong> {v}</li>)}
                                         </ul>
                                     )}
                                 </div>

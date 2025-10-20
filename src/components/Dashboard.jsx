@@ -597,6 +597,7 @@ const Dashboard = () => {
                                   color: "#5bbe8eff",
                                   cursor: "pointer",
                                 }}
+                                onClick={()=>navigate(`/preview/${appointment.patientId}`)}
                               >
                                 <FaEye />
                               </button>
