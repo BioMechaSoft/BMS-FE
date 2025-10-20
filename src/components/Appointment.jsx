@@ -35,7 +35,7 @@ const Appointment = () => {
   const [hasVisited, setHasVisited] = useState(false);
   const [price, setPrice] = useState(0);
   const [doctorFee, setDoctorFee] = useState(100);
-  // const [diagnosys, setDiagnosys] = useState("N/A");
+  const [diagnosys, setDiagnosys] = useState({});
   const [paymentStatus, setPaymentStatus] = useState("Pending");
 
   const [BP, setBP] = useState("");
@@ -111,8 +111,8 @@ const Appointment = () => {
         setShowPatientSuggestions(false);
       }
     };
-    document.addEventListener('click', onDocClick);
-    return () => document.removeEventListener('click', onDocClick);
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
   }, []);
 
   // keyboard: Ctrl/Cmd+P => submit & download, global for this form
@@ -352,15 +352,16 @@ const Appointment = () => {
         paymentStatus,
         // do not set status from frontend creation; backend will harmonize (Paid -> Accepted at creation)
         status: undefined,
-        // diagnosys,
-        BP: BP || undefined,
-        SPO2: SPO2 || undefined,
-        diabetes: diabetes || undefined,
-        height: height || undefined,
-        weight: width || undefined,
-        others: others || undefined,
+        diagnosys: {
+          BP: BP || undefined,
+          SPO2: SPO2 || undefined,
+          diabetes: diabetes || undefined,
+          height: height || undefined,
+          weight: width || undefined,
+          others: others || undefined,
+        },
       };
-  // payload prepared for appointment creation
+      // payload prepared for appointment creation
       if (!canBook)
         return toast.error(
           "Only Admin/Doctor/Compounder may create appointments. Please login to dashboard."
@@ -532,16 +533,18 @@ const Appointment = () => {
             {step === 1 && (
               <div>
                 <div className="lnr-input-box">
-                  <div style={{ position: 'relative' }} ref={suggestRef}>
+                  <div style={{ flex:"1", width:"100%" }} ref={suggestRef}>
                     <input
                       type="text"
                       placeholder="Full Name"
+                      style={{width:"100%"}}
                       value={name}
                       onChange={(e) => {
                         const v = e.target.value;
                         setName(v);
                         // debounce suggestions
-                        if (suggestTimer.current) clearTimeout(suggestTimer.current);
+                        if (suggestTimer.current)
+                          clearTimeout(suggestTimer.current);
                         if (!v || v.trim().length < 2) {
                           setPatientSuggestions([]);
                           setShowPatientSuggestions(false);
@@ -550,7 +553,10 @@ const Appointment = () => {
                         suggestTimer.current = setTimeout(async () => {
                           try {
                             const q = encodeURIComponent(v);
-                            const { data } = await api.get(`/api/v1/appointment/suggest`, { params: { q, limit: 8 } });
+                            const { data } = await api.get(
+                              `/api/v1/appointment/suggest`,
+                              { params: { q, limit: 8 } }
+                            );
                             setPatientSuggestions(data.patients || []);
                             setShowPatientSuggestions(true);
                           } catch (err) {
@@ -560,42 +566,67 @@ const Appointment = () => {
                         }, 300);
                       }}
                     />
-                    {showPatientSuggestions && patientSuggestions && patientSuggestions.length > 0 && (
-                      <div style={{ position: 'absolute', left: 0, right: 0, background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', zIndex: 1200, maxHeight: 220, overflowY: 'auto' }}>
-                        {patientSuggestions.map((p) => (
-                            <div key={p._id} style={{ padding: '8px 10px', borderBottom: '1px solid #eee', cursor: 'pointer' }} onClick={() => {
-                            toast.success('Prefilled existing patient');
-                            // autofill fields
-                            setName(p.name || '');
-                            setPhone(p.phone || '');
-                            setNic(p.nic || '');
-                            if (p.address) setAddress(p.address);
-                            // fill dob/age/gender if present (but do NOT override appointmentDate)
-                            if (p.dob) {
-                              const iso = new Date(p.dob).toISOString().slice(0,10);
-                              setDob(iso);
-                              const parts = dobToAgeParts(iso);
-                              if (parts) {
-                                setAgeYears(String(parts.years || ''));
-                                setAgeMonths(String(parts.months || ''));
-                                setAgeDays(String(parts.days || ''));
-                              }
-                            } else if (p.age) {
-                              setAgeYears(String(p.age || ''));
-                              setAgeMonths('');
-                              setAgeDays('');
-                            }
-                            if (p.gender) setGender(p.gender);
-                            // mark as visited (we found existing patient)
-                            setHasVisited(true);
-                            setShowPatientSuggestions(false);
-                          }}>
-                            <div style={{ fontWeight: 600 }}>{p.name}</div>
-                            <div className="muted" style={{ fontSize: 13 }}>{p.phone || p.email || p.address || ''}</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {showPatientSuggestions &&
+                      patientSuggestions &&
+                      patientSuggestions.length > 0 && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            left: 0,
+                            right: 0,
+                            background: "#fff",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                            zIndex: 1200,
+                            maxHeight: 220,
+                            overflowY: "auto",
+                          }}
+                        >
+                          {patientSuggestions.map((p) => (
+                            <div
+                              key={p._id}
+                              style={{
+                                padding: "8px 10px",
+                                borderBottom: "1px solid #eee",
+                                cursor: "pointer",
+                              }}
+                              onClick={() => {
+                                toast.success("Prefilled existing patient");
+                                // autofill fields
+                                setName(p.name || "");
+                                setPhone(p.phone || "");
+                                setNic(p.nic || "");
+                                if (p.address) setAddress(p.address);
+                                // fill dob/age/gender if present (but do NOT override appointmentDate)
+                                if (p.dob) {
+                                  const iso = new Date(p.dob)
+                                    .toISOString()
+                                    .slice(0, 10);
+                                  setDob(iso);
+                                  const parts = dobToAgeParts(iso);
+                                  if (parts) {
+                                    setAgeYears(String(parts.years || ""));
+                                    setAgeMonths(String(parts.months || ""));
+                                    setAgeDays(String(parts.days || ""));
+                                  }
+                                } else if (p.age) {
+                                  setAgeYears(String(p.age || ""));
+                                  setAgeMonths("");
+                                  setAgeDays("");
+                                }
+                                if (p.gender) setGender(p.gender);
+                                // mark as visited (we found existing patient)
+                                setHasVisited(true);
+                                setShowPatientSuggestions(false);
+                              }}
+                            >
+                              <div style={{ fontWeight: 600 }}>{p.name}</div>
+                              <div className="muted" style={{ fontSize: 13 }}>
+                                {p.phone || p.email || p.address || ""}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                   </div>
                   <select
                     value={gender}
@@ -639,17 +670,16 @@ const Appointment = () => {
                           })();
                           setDob(computed);
                         }}
-                        // style={{ width: "6rem" }}
                       />
                       <input
                         type="number"
                         placeholder="Months"
                         min={0}
-                        max={11}
+                        max={12}
                         value={ageMonths}
                         onChange={(e) => {
                           const v = e.target.value.replace(/[^0-9]/g, "");
-                          setAgeMonths(v);
+                          setAgeMonths(v && v > 12 ? 12:v);
                           const y = Number(ageYears) || 0;
                           const m = Number(v) || 0;
                           const d = Number(ageDays) || 0;
@@ -662,7 +692,6 @@ const Appointment = () => {
                           );
                           setDob(dt.toISOString().slice(0, 10));
                         }}
-                        // style={{ width: "6rem" }}
                       />
                       <input
                         type="number"
@@ -672,7 +701,7 @@ const Appointment = () => {
                         value={ageDays}
                         onChange={(e) => {
                           const v = e.target.value.replace(/[^0-9]/g, "");
-                          setAgeDays(v);
+                          setAgeDays(v && v > 31 ? 31:v);
                           const y = Number(ageYears) || 0;
                           const m = Number(ageMonths) || 0;
                           const d = Number(v) || 0;
@@ -685,16 +714,15 @@ const Appointment = () => {
                           );
                           setDob(dt.toISOString().slice(0, 10));
                         }}
-                        // style={{ width: "6rem" }}
                       />
                     </div>
                   </div>
-                    <input
-                      type="number"
-                      placeholder="Mobile Number"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                    />
+                  <input
+                    type="number"
+                    placeholder="Mobile Number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
                 </div>
                 <div className="lnr-input-box">
                   <div className="address-box inner-box-of-lnr">
@@ -739,7 +767,11 @@ const Appointment = () => {
                         type="text"
                         placeholder="BP"
                         value={BP}
-                        onChange={(e) => setBP(e.target.value)}
+                        // onChange={(e) => setBP(e.target.value)}
+                        onChange={(e)=>{
+                          setBP(e.target.value)
+                          setDiagnosys({BP:BP})
+                        }}
                       />
                     </div>
                     <div>
@@ -797,13 +829,13 @@ const Appointment = () => {
                 </div>
 
                 {/* <div className="lnr-input-box"> */}
-                  <div className="fees-detail-box">
-                    Appointment Fee: {price} Rs
-                    <br />
-                    Doctor Fee: {doctorFee} Rs
-                    <br />
-                    <b>Total: {price + doctorFee} Rs</b>
-                  </div>
+                <div className="fees-detail-box">
+                  Appointment Fee: {price} Rs
+                  <br />
+                  Doctor Fee: {doctorFee} Rs
+                  <br />
+                  <b>Total: {price + doctorFee} Rs</b>
+                </div>
                 {/* </div> */}
 
                 <div style={{ marginTop: "2rem" }}>

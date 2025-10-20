@@ -388,11 +388,11 @@ const Dashboard = () => {
                   <th>Sr. No.</th>
                   <th>Patient Name</th>
                   <th>Appointment Date</th>
-                  <th>Created By</th>
+                  {/* <th>Created By</th> */}
                   <th>Phone</th>
                   <th>Gender</th>
-                  <th>Payment Mode</th>
-                  <th>Fees Amount</th>
+                  {/* <th>Payment Mode</th> */}
+                  {/* <th>Fees Amount</th> */}
                   <th>Payment Status</th>
                   <th>Status</th>
                   <th>Doctor</th>
@@ -494,16 +494,23 @@ const Dashboard = () => {
                           <td>
                             {appointment.appointment_date.substring(0, 10)}
                           </td>
-                          <td>{appointment?.booked_by || "You"}</td>
+                          {/* <td>{appointment?.booked_by || "You"}</td> */}
                           <td>{appointment.phone || appointment.mobile}</td>
                           <td>{appointment.gender}</td>
-                          <td>{appointment.paymentMode || "Cash"}</td>
-                          <td>{appointment.price || appointment.feesAmount || "0"}</td>
+                          {/* <td>{appointment.paymentMode || "Cash"}</td> */}
+                          {/* <td>{appointment.price || appointment.feesAmount || "0"}</td> */}
                           <td>
-                            <select value={appointment.paymentStatus || 'Pending'} onChange={(e) => handleUpdatePaymentStatus(appointment._id, e.target.value)}>
-                              <option value="Pending">Pending</option>
-                              <option value="Accepted">Accepted</option>
-                              <option value="Paid">Paid</option>
+                            <select value={appointment.paymentStatus || 'Pending'} 
+                              onChange={(e) => handleUpdatePaymentStatus(appointment._id, e.target.value)}
+                              className={
+                                appointment.paymentStatus === "Pending"
+                                ? "value-rejected"
+                                : "value-accepted"
+                              }
+                            >
+                              <option value="Pending" className="value-rejected">Pending</option>
+                              {/* <option value="Accepted">Accepted</option> */}
+                              <option value="Paid" className="value-accepted">Paid</option>
                             </select>
                           </td>
                           <td>

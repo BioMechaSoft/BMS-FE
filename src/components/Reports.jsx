@@ -47,23 +47,23 @@ const Reports = ({ appointments = [] }) => {
 
   return (
     <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
-        <div style={{ flex: 1, padding: 14, borderRadius: 12, background: '#e6f7ff' }}>
+      <div style={{ flex: 1, padding: 14, borderRadius: 12, background: '#e6f7ff' }}>
         <p>Patients Viewed Today</p>
         <h3>{todayCount}</h3>
         <p style={{ fontSize: 12, color: '#333' }}>Paid today: {formatCurrency(todayPayments)}</p>
       </div>
 
-        <div style={{ flex: 1, padding: 14, borderRadius: 12, background: '#fff0f6' }}>
+      <div style={{ flex: 1, padding: 14, borderRadius: 12, background: '#fff0f6' }}>
         <p>Patients This Month</p>
         <h3>{monthCount}</h3>
         <p style={{ fontSize: 12, color: '#333' }}>Paid this month: {formatCurrency(monthPayments)}</p>
       </div>
 
-        <div style={{ flex: 1, padding: 14, borderRadius: 12, background: '#f0fff4' }}>
+      {/* <div style={{ flex: 1, padding: 14, borderRadius: 12, background: '#f0fff4' }}>
         <p>Total Appointments</p>
         <h3>{appointments.length}</h3>
-  <p style={{ fontSize: 12, color: '#333' }}>Total paid: {formatCurrency((appointments || []).reduce((s, a) => s + (Number(a.price || a.feesAmount || a.fees || a.total || 0) || 0), 0))}</p>
-      </div>
+        <p style={{ fontSize: 12, color: '#333' }}>Total paid: {formatCurrency((appointments || []).reduce((s, a) => s + (Number(a.price || a.feesAmount || a.fees || a.total || 0) || 0), 0))}</p>
+      </div> */}
     </div>
   );
 };
