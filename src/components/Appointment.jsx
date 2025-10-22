@@ -35,15 +35,9 @@ const Appointment = () => {
   const [hasVisited, setHasVisited] = useState(false);
   const [price, setPrice] = useState(0);
   const [doctorFee, setDoctorFee] = useState(100);
-  const [diagnosys, setDiagnosys] = useState({});
+  const [diagnosys, setDiagnosys] = useState({ BP: "", Diabetics: "", SPO2: "", Height: "", Weight: "", Others: "" });
   const [paymentStatus, setPaymentStatus] = useState("Pending");
 
-  const [BP, setBP] = useState("");
-  const [SPO2, setSPO2] = useState("");
-  const [diabetes, setDiabetes] = useState("");
-  const [height, setHeight] = useState("");
-  const [width, setWidth] = useState("");
-  const [others, setOthers] = useState("");
   const [downloadInvoice, setDownloadInvoice] = useState(false);
   const [showInvoicePreview, setShowInvoicePreview] = useState(false);
   const [invoiceFields, setInvoiceFields] = useState({
@@ -299,6 +293,29 @@ const Appointment = () => {
         }
       }
       const hasVisitedBool = Boolean(hasVisited);
+
+      // Calculate BMI if height and weight are available
+      let bmiString = "";
+      const heightInMeters = Number(diagnosys.Height) / 100;
+      const weightInKg = Number(diagnosys.Weight);
+      if (heightInMeters > 0 && weightInKg > 0) {
+        const bmi = (weightInKg / (heightInMeters * heightInMeters)).toFixed(2);
+        bmiString = `BMI:${bmi}`;
+      }
+
+      // Combine calculated BMI with any manually entered "Others" text
+      const othersValue = [bmiString, diagnosys.Others].filter(Boolean).join('; ');
+
+      // Append units to diagnosys fields for the payload
+      const diagnosysForPayload = {
+        BP: diagnosys.BP ? `${diagnosys.BP} mmHg` : undefined,
+        Diabetics: diagnosys.Diabetics ? `${diagnosys.Diabetics} mg/dL` : undefined,
+        SPO2: diagnosys.SPO2 ? `${diagnosys.SPO2} %` : undefined,
+        Height: diagnosys.Height ? `${diagnosys.Height} cm` : undefined,
+        Weight: diagnosys.Weight ? `${diagnosys.Weight} kg` : undefined,
+        Others: othersValue || undefined,
+      };
+
       const payload = {
         firstName: firstName,
         lastName: lastName || "Not Confirmed",
@@ -325,21 +342,17 @@ const Appointment = () => {
         paymentStatus,
         // do not set status from frontend creation; backend will harmonize (Paid -> Accepted at creation)
         status: undefined,
-        diagnosys: {
-          BP: BP || undefined,
-          SPO2: SPO2 || undefined,
-          diabetes: diabetes || undefined,
-          height: height || undefined,
-          weight: width || undefined,
-          others: others || undefined,
-        },
+        // match backend schema keys and casing
+        result: [{ diagnosys: diagnosysForPayload }],
       };
       // payload prepared for appointment creation
       if (!canBook)
         return toast.error(
           "Only Admin/Doctor/Compounder may create appointments. Please login to dashboard."
         );
+      // debug: log payload being dispatched so we can confirm data sent
       // dispatch redux action to create appointment (saga handles download)
+      console.log('Creating appointment with payload:', payload);
       dispatch({
         type: "appointment/createAppointmentRequest",
         payload: { payload, download: downloadInvoice },
@@ -374,12 +387,7 @@ const Appointment = () => {
       setAddress("");
       set_id("");
       setPrice(0);
-      setBP("");
-      setSPO2("");
-      setDiabetes("");
-      setHeight("");
-      setWidth("");
-      setOthers("");
+      setDiagnosys({ BP: "", Diabetics: "", SPO2: "", Height: "", Weight: "", Others: "" });
       setDownloadInvoice(false);
       setStep(1);
     }
@@ -389,8 +397,8 @@ const Appointment = () => {
     if (!searchNameOrPhone) return toast.error("Enter name or phone to search");
     try {
       const q = encodeURIComponent(searchNameOrPhone);
-      const url = `${baseUrl}/api/v1/appointment/search?q=${q}`;
-      const { data } = await axios.get(url);
+      // use api helper (axios instance) instead of undefined globals
+      const { data } = await api.get(`/api/v1/appointment/search`, { params: { q } });
       const appt = data.appointments[0];
       if (appt) {
         setName(
@@ -739,36 +747,19 @@ const Appointment = () => {
                     <div>
                       <input
                         type="text"
-                        placeholder="BP"
-                        value={BP}
-                        onChange={(e) => setBP(e.target.value)}
+                        placeholder="BP (e.g., 120/80 mmHg)"
+                        value={diagnosys.BP}
+                        onChange={(e) => setDiagnosys(d => ({ ...d, BP: e.target.value }))}
                       />
                     </div>
                     <div>
                       <input
-                        type="text"
-                        placeholder="Diabetes"
-                        value={diabetes}
-                        onChange={(e) => setDiabetes(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="diagnosis-grid-col">
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="SPO2"
-                        value={SPO2}
-                        onChange={(e) => setSPO2(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="Height"
-                        value={height}
-                        onChange={(e) => setHeight(e.target.value)}
+                        type="number"
+                        placeholder="Diabetes (mg/dL)"
+                        min="20"
+                        max="600"
+                        value={diagnosys.Diabetics}
+                        onChange={(e) => setDiagnosys(d => ({ ...d, Diabetics: e.target.value }))}
                       />
                     </div>
                   </div>
@@ -776,17 +767,42 @@ const Appointment = () => {
                   <div className="diagnosis-grid-col">
                     <div>
                       <input
-                        type="text"
-                        placeholder="Weight"
-                        value={width}
-                        onChange={(e) => setWidth(e.target.value)}
+                        type="number"
+                        placeholder="SPO2 (%)"
+                        min="0"
+                        max="100"
+                        value={diagnosys.SPO2}
+                        onChange={(e) => setDiagnosys(d => ({ ...d, SPO2: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="number"
+                        placeholder="Height (cm)"
+                        min="30"
+                        max="250"
+                        value={diagnosys.Height}
+                        onChange={(e) => setDiagnosys(d => ({ ...d, Height: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="diagnosis-grid-col">
+                    <div>
+                      <input
+                        type="number"
+                        placeholder="Weight (kg)"
+                        min="1"
+                        max="300"
+                        value={diagnosys.Weight}
+                        onChange={(e) => setDiagnosys(d => ({ ...d, Weight: e.target.value }))}
                       />
                     </div>
                     <div>
                       <textarea
                         rows="1"
-                        value={others}
-                        onChange={(e) => setOthers(e.target.value)}
+                        value={diagnosys.Others}
+                        onChange={(e) => setDiagnosys(d => ({ ...d, Others: e.target.value }))}
                         placeholder="Others"
                       />
                     </div>

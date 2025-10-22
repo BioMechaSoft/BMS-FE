@@ -38,7 +38,7 @@ const Preview = () => {
         const isMongoId = /^[0-9a-fA-F]{24}$/.test(patientId);
         dispatch(fetchPreviewRequest({ patientId }));
         return () => { dispatch(resetPreview()); };
-    }, [routePatientId, appointmentIdFromQuery]);
+    }, [patientId, dispatch]);
     
 
 
@@ -46,18 +46,22 @@ const Preview = () => {
     const downLoadPDF = async () => {
         const input = document.getElementById('pdfDownload');
         if (!input) return;
+
         // prepare a clean A4 surface for capture
         const originalClass = input.className;
         const originalStyle = { width: input.style.width, minHeight: input.style.minHeight, boxShadow: input.style.boxShadow, borderRadius: input.style.borderRadius };
         input.classList.add('a4-paper');
+
         // use a higher scale to improve text clarity in PDF
         const canvas = await html2canvas(input, { scale: 3, useCORS: true, logging: false });
+
         // restore
         input.className = originalClass;
         input.style.width = originalStyle.width || '';
         input.style.minHeight = originalStyle.minHeight || '';
         input.style.boxShadow = originalStyle.boxShadow || '';
         input.style.borderRadius = originalStyle.borderRadius || '';
+
         const imgWidthPx = canvas.width;
         const imgHeightPx = canvas.height;
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -140,148 +144,125 @@ const Preview = () => {
                         </header>
 
                         {/* Patient Details Section */}
-                        <section className="pDetails modern-section">
-                            <div className="outer-data-box patient-box">
-                                <div className="pdata">
-                                        <div className="lCol">
-                                            <p><strong>Name:</strong> {patient.name?patient.name:`${patient?.firstName} ${patient?.lastName}`}</p>
-                                            {patient.nic && <p className="hide-on-print"><strong>NIC:</strong> {patient.nic}</p>}
-                                            {/* {patient.email && <p><strong>Email:</strong> {patient.email}</p>} */}
-                                            {patient.phone && <p><strong>Phone:</strong> {patient.phone}</p>}
-                                            {patient.gender && <p><strong>Gender:</strong> {patient.gender}</p>}
-                                            {(patient.dob || patient.age) && (
-                                                <p><strong>Age:</strong> {patient.dob ? dobToAge(patient.dob) : (patient.age ? `${patient.age} years` : '')}</p>
-                                            )}
-                                            {patient.address && <p><strong>Address:</strong> {patient.address}</p>}
+                        <div className="pDetails modern-section">
+                            <div className="prescription-body">
+                                {/* Top Section */}
+                                <div className="top-section">
+                                    <div className="outer-data-box patient-box">
+                                        <div className="pdata">
+                                            <div className="lCol">
+                                                <p><strong>Name:</strong> {patient.name ? patient.name : `${patient?.firstName} ${patient?.lastName}`}</p>
+                                                {patient.phone && <p><strong>Phone:</strong> {patient.phone}</p>}
+                                                {patient.gender && <p><strong>Gender:</strong> {patient.gender}</p>}
+                                                {(patient.dob || patient.age) && (
+                                                    <p><strong>Age:</strong> {patient.dob ? dobToAge(patient.dob) : (patient.age ? `${patient.age} years` : '')}</p>
+                                                )}
+                                                {patient.address && <p><strong>Address:</strong> {patient.address}</p>}
+                                            </div>
+                                            <div className="rightCol">
+                                                <p><strong>Date:</strong> {formatDate(patient.updatedAt)}</p>
+                                                {patient.weight && <p><strong>Weight:</strong> {patient.weight}</p>}
+                                                {patient.department && <p><strong>Department:</strong> {patient.department}</p>}
+                                            </div>
                                         </div>
-                                        <div className="rightCol">
-                                        <p><strong>Date:</strong> {formatDate(patient.updatedAt)}</p>
-                                        {patient.weight && <p><strong>Weight:</strong> {patient.weight}</p>}
-                                        {/* {patient.appointmentId && <p className="hide-on-print"><strong>Appointment:</strong> {patient.appointmentId}</p>} */}
-                                        {patient.department && <p><strong>Department:</strong> {patient.department}</p>}
                                     </div>
-                                </div>
-                            </div>
-
-                            <div className='diagnosis-box'>
-                                    <h4>{report?.diagnosys?.length>=0?"Diagnosis":"No Diagnosis done"}</h4>
-                                    {report?.diagnosys && (
-                                        <ul className="diagnosis-list">
-                                            {Object.entries(report?.diagnosys).map(([k, v]) => v && <li key={k}><strong>{k}:</strong> {v}</li>)}
-                                        </ul>
+                                    <div className='diagnosis-box'>
+                                        <h4>{"Vitals"}</h4>
+                                        {report?.diagnosys && (
+                                            <ul className="diagnosis-list">
+                                                {Object.entries(report?.diagnosys).map(([k, v]) => v && <li key={k}><strong>{k}:</strong> {v}</li>)}
+                                            </ul>
+                                        )}
+                                    </div>
+                                    {report?.initialComplain && (
+                                        <div className='complaints'>
+                                            <div className="fixed-area-block">
+                                                <strong>Initial Complaint:</strong>
+                                                <div className="fixed-area">{report.initialComplain}</div>
+                                            </div>
+                                            {report.medicalHistory && (
+                                                <div className="fixed-area-block">
+                                                    <strong>Medical History:</strong>
+                                                    <div className="fixed-area">{report.medicalHistory}</div>
+                                                </div>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
-                            {/* Prescription Info Section */}
-                            <div className="mdata outer-data-box prescription-box">
-                                {report?.initialComplain && (
-                                    <div className='complaints'>
-                                        <div className="fixed-area-block">
-                                            <strong>Initial Complaint:</strong>
-                                            <div className="fixed-area">{report.initialComplain}</div>
+
+                                {/* Middle Section (Left/Right) */}
+                                <div className="middle-section">
+                                    <div className="left-section">
+                                        {report?.advice?.testAdvice?.length > 0 && (
+                                            <section className="advice-section test-advice">
+                                                <h5 className="section-title">Test Advice ({report.advice.testAdvice.length})</h5>
+                                                <div className="test-advice-list">
+                                                    {report.advice.testAdvice.map((t, i) => (
+                                                        <div key={i} className="test-advice-item">
+                                                            <div className="test-name">
+                                                                {t.testName}
+                                                                {t.testType && <span className="test-type">({t.testType})</span>}
+                                                            </div>
+                                                            {t.precautions && <div className="test-precautions" style={{ whiteSpace: 'pre-wrap' }}>
+                                                                <strong>Precautions:</strong> {t.precautions}
+                                                            </div>}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </section>
+                                        )}
+                                    </div>
+                                    <div className="right-section">
+                                        <div className='medic-details'>
+                                            <h4>{"Medicines Prescribed"}</h4>
+                                            <div className="medic-header">
+                                                <div>Sl</div>
+                                                <div>Medicine</div>
+                                                <div>Dose</div>
+                                                <div>Route</div>
+                                                <div>Frequency</div>
+                                                <div>Duration</div>
+                                            </div>
+                                            <div className="medic-data">
+                                                {medicines.length > 0 ? medicines.map((med, idx) => (
+                                                    <div className="data-row" key={med._id || idx}>
+                                                        <div>{idx + 1}</div>
+                                                        <div>{med.Medicine || med.MedicineName || med.name || med.medicine || ''}</div>
+                                                        <div>{med.Dose || med.dose || med.dosage || ''}</div>
+                                                        <div>{med.Rout || med.Route || med.rout || med.route || 'Oral'}</div>
+                                                        <div>{med.Interval || med.Frequency || med.frequency || med.interval || ''}</div>
+                                                        <div>{med.Duration || med.duration || ''}</div>
+                                                    </div>
+                                                )) : (
+                                                    <div className="no-meds">No medicines prescribed.</div>
+                                                )}
+                                            </div>
                                         </div>
-                                        {report.medicalHistory && (
-                                            <div className="fixed-area-block">
-                                                <strong>Medical History:</strong>
-                                                <div className="fixed-area">{report.medicalHistory}</div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                                
-                                <div className='medic-details'>
-                                    <div className="medic-header">
-                                        <div>Sl</div>
-                                        <div>Medicine</div>
-                                        <div>Dose</div>
-                                        <div>Route</div>
-                                        <div>Frequency</div>
-                                        <div>Duration</div>
-                                    </div>
-                                    <div className="medic-data">
-                                        {medicines.length > 0 ? medicines.map((med, idx) => (
-                                            <div className="data-row" key={med._id || idx}>
-                                                <div>{idx + 1}</div>
-                                                <div>{med.Medicine || med.MedicineName || med.name || med.medicine || ''}</div>
-                                                <div>{med.Dose || med.dose || med.dosage || ''}</div>
-                                                <div>{med.Rout || med.Route || med.rout || med.route || 'Oral'}</div>
-                                                <div>{med.Interval || med.Frequency || med.frequency || med.interval || ''}</div>
-                                                <div>{med.Duration || med.duration || ''}</div>
-                                            </div>
-                                        )) : (
-                                            <div className="no-meds">No medicines prescribed.</div>
-                                        )}
                                     </div>
                                 </div>
-                                                                                                {report?.advice && (() => {
-                                                                                                        const adv = report.advice;
-                                                                                                        if (!adv) return null;
-                                                                                                        // legacy string -> show as medication text
-                                                                                                        if (typeof adv === 'string') {
-                                                                                                            return (
-                                                                                                                <div className="advice-box">
-                                                                                                                    <h4 className="advice-title">Doctor's Advice</h4>
-                                                                                                                    <div className="advice-content">
-                                                                                                                        <p style={{ whiteSpace: 'pre-wrap' }}>{adv}</p>
-                                                                                                                    </div>
-                                                                                                                </div>
-                                                                                                            );
-                                                                                                        }
 
-                                                                                                        // structured object
-                                                                                                        const hasTest = Array.isArray(adv.testAdvice) && adv.testAdvice.length > 0;
-                                                                                                        const hasMed = adv.medication && String(adv.medication).trim() !== '';
-                                                                                                        const hasDiet = adv.diet && String(adv.diet).trim() !== '';
-                                                                                                        if (!hasTest && !hasMed && !hasDiet) return null;
-
-                                                                                                        return (
-                                                                                                            <div className="advice-box">
-                                                                                                                <h4 className="advice-title">Doctor's Advice</h4>
-                                                                                                                <div className="advice-grid">
-                                                                                                                    {hasTest && (
-                                                                                                                        <section className="advice-section test-advice">
-                                                                                                                            <h5 className="section-title">Test Advice ({adv.testAdvice.length})</h5>
-                                                                                                                            <table className="test-advice-table modern-table">
-                                                                                                                                <thead>
-                                                                                                                                    <tr>
-                                                                                                                                        <th>Test Name</th>
-                                                                                                                                        <th>Type</th>
-                                                                                                                                        <th>Precautions</th>
-                                                                                                                                        <th>Date</th>
-                                                                                                                                    </tr>
-                                                                                                                                </thead>
-                                                                                                                                <tbody>
-                                                                                                                                    {adv.testAdvice.map((t, i) => (
-                                                                                                                                        <tr key={i}>
-                                                                                                                                            <td>{t.testName}</td>
-                                                                                                                                            <td>{t.testType}</td>
-                                                                                                                                            <td style={{ maxWidth: 240, whiteSpace: 'pre-wrap' }}>{t.precautions}</td>
-                                                                                                                                            <td>{t.testDate ? formatDate(t.testDate) : '-'}</td>
-                                                                                                                                        </tr>
-                                                                                                                                    ))}
-                                                                                                                                </tbody>
-                                                                                                                            </table>
-                                                                                                                        </section>
-                                                                                                                    )}
-
-                                                                                                                    <div className="advice-section vertical-stack">
-                                                                                                                        {hasMed && (
-                                                                                                                            <section className="advice-section medication-advice">
-                                                                                                                                <h5 className="section-title">Medication Advice</h5>
-                                                                                                                                <div className="advice-content"><p style={{ whiteSpace: 'pre-wrap' }}>{adv.medication}</p></div>
-                                                                                                                            </section>
-                                                                                                                        )}
-
-                                                                                                                        {hasDiet && (
-                                                                                                                            <section className="advice-section diet-advice">
-                                                                                                                                <h5 className="section-title">Diet Advice</h5>
-                                                                                                                                <div className="advice-content"><p style={{ whiteSpace: 'pre-wrap' }}>{adv.diet}</p></div>
-                                                                                                                            </section>
-                                                                                                                        )}
-                                                                                                                    </div>
-                                                                                                                </div>
-                                                                                                            </div>
-                                                                                                        );
-                                                                                                })()}
+                                {/* Bottom Section */}
+                                <div className="bottom-section">
+                                    {report?.advice && (typeof report.advice === 'string' || report.advice.medication || report.advice.diet) && (
+                                        <div className="advice-box">
+                                            <div className="advice-section vertical-stack">
+                                                {typeof report.advice === 'string' && <p style={{ whiteSpace: 'pre-wrap' }}>{report.advice}</p>}
+                                                {report.advice.medication && (
+                                                    <section className="advice-section medication-advice">
+                                                        <h5 className="section-title">Medication Advice</h5>
+                                                        <div className="advice-content"><p style={{ whiteSpace: 'pre-wrap' }}>{report.advice.medication}</p></div>
+                                                    </section>
+                                                )}
+                                                {report.advice.diet && (
+                                                    <section className="advice-section diet-advice">
+                                                        <h5 className="section-title">Diet Advice</h5>
+                                                        <div className="advice-content"><p style={{ whiteSpace: 'pre-wrap' }}>{report.advice.diet}</p></div>
+                                                    </section>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Doctor's Notes & Follow-up */}
@@ -289,7 +270,7 @@ const Preview = () => {
                                 {previewFollowup && <h4 className='follow-up-date'>Next Follow-up Date: {previewFollowup}</h4>}
                                 {patient.examinedBy && <h4 className='sign'>Examined By: {patient.examinedBy}</h4>}
                             </div>
-                        </section>
+                        </div>
 
                      
 
@@ -306,6 +287,8 @@ const Preview = () => {
             </div>
         </section>
     );
+
+
 };
 
 export default Preview;

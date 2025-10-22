@@ -85,10 +85,11 @@ export default function AutoSuggestInput({ value, onChange, suggestions = [], pl
         autoComplete="off"
         onChange={e => {
           onChange(e);
-          // show suggestions only when user is typing after a comma (or if in single mode)
           const v = e.target.value || '';
           if (single) setShow(true);
-          else setShow(v.indexOf(',') !== -1);
+          // Show suggestions if there's a non-empty token (last part of string)
+          const lastToken = getLastToken(v);
+          setShow(lastToken.length > 0);
         }}
         onFocus={() => {
           const v = value || '';

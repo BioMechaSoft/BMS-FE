@@ -107,6 +107,7 @@ const Prescription = ({ patientId, onClose }) => {
           setMedicalHistory(r.medicalHistory || "");
           setDiagnosys(r.diagnosys || { BP: "", Diabetics: "", SPO2: "", Height: "", Weight: "", Others: "" });
           setMedicineAdvice(Array.isArray(r.medicineAdvice) ? r.medicineAdvice : (r.medicineAdvice ? [r.medicineAdvice] : []));
+
           // load structured advice if present (backwards compatible with string)
           const adv = r.advice;
           if (!adv) {
@@ -575,8 +576,9 @@ const Prescription = ({ patientId, onClose }) => {
       if (selectedTestTypes.includes("Diet")) {
         adviceToSave.diet = dietAdvice;
       }
-      // validation: ensure something meaningful is present
-      const hasContent = (initialComplain && initialComplain.trim()) || (Array.isArray(medicineAdvice) && medicineAdvice.length > 0) || (Object.keys(adviceToSave).length > 0);
+  // validation: ensure something meaningful is present
+  const diagnosysHasContent = diagnosys && Object.keys(diagnosys).some(k => (diagnosys[k] || '').toString().trim() !== '');
+  const hasContent = (initialComplain && initialComplain.trim()) || (Array.isArray(medicineAdvice) && medicineAdvice.length > 0) || (Object.keys(adviceToSave).length > 0) || diagnosysHasContent;
       if (!hasContent) {
         toast.error("Please add at least one of: initial complaint, medicines or advice before saving.");
         return;
@@ -669,13 +671,16 @@ const Prescription = ({ patientId, onClose }) => {
                             // debounce server query (only for last token after last comma)
                             if (complainDebounceRef.current) clearTimeout(complainDebounceRef.current);
                             complainDebounceRef.current = setTimeout(async () => {
-                              const val = (e.target.value || '');
-                              // only consider the substring after the last comma as the token to query
-                              const last = (val.split(',').pop() || '').trim();
-                              if (!last) return setComplaintSuggestions([]);
+                              const val = e.target.value || '';
+                              // Token to search is the last part of the string after a comma, or the whole string if no comma.
+                              const lastToken = (val.split(',').pop() || '').trim();
+                              if (!lastToken) {
+                                setComplaintSuggestions([]);
+                                return;
+                              }
                               try {
                                 setIsFetchingComplaints(true);
-                                const { data } = await api.get(`/api/v1/medical/suggestions/advices`, { params: { q: last, limit: 100 } });
+                                const { data } = await api.get(`/api/v1/medical/suggestions/advices`, { params: { q: lastToken, limit: 100 } });
                                 // server returns advices
                                 setComplaintSuggestions((data.advices || []).map(a => ({ ...a, label: a.name })));
                               } catch (err) {
@@ -689,34 +694,8 @@ const Prescription = ({ patientId, onClose }) => {
                             // determine label
                             const label = (item && typeof item === 'object') ? (item.name || (typeof newVal === 'string' ? newVal : '')) : (typeof newVal === 'string' ? newVal : (item || ''));
                             // Replace last partial token (if present) or append selected label as a new token.
-                            setInitialComplain(prev => {
-                              const cur = (prev || '');
-                              // Keep everything before the last comma intact
-                              const lastCommaIdx = cur.lastIndexOf(',');
-                              const before = lastCommaIdx === -1 ? '' : cur.slice(0, lastCommaIdx + 1); // includes comma
-                              const after = lastCommaIdx === -1 ? cur : cur.slice(lastCommaIdx + 1);
-                              const lastToken = (after || '').trim();
-
-                              // tokens from before (for dedupe check)
-                              const existingTokens = (before ? before.split(',').map(p => p.trim()).filter(Boolean) : []).concat(lastToken ? [lastToken] : []).filter(Boolean);
-                              if (existingTokens.includes(label) && lastToken === label) {
-                                // already identical to last token; ensure trailing comma+space
-                                const base = (before ? before : '') + label;
-                                return base.endsWith(',') ? base + ' ' : base + ', ';
-                              }
-
-                              // if last token is non-empty and there's no trailing comma, replace it
-                              const hasTrailingComma = cur.trim().endsWith(',');
-                              if (lastToken && !hasTrailingComma) {
-                                const prefix = before; // keep prefix including comma if present
-                                return (prefix ? (prefix.endsWith(' ') ? prefix : prefix + ' ') : '') + label + ', ';
-                              }
-
-                              // otherwise append as new token
-                              const base = cur.trim();
-                              const prefix = base ? (base.endsWith(',') ? base + ' ' : base + ', ') : '';
-                              return prefix + label + ', ';
-                            });
+                            // AutoSuggestInput already updated the value via onChange. Just ensure trailing comma and space.
+                            setInitialComplain(newVal.trim() + ', ');
                             setComplaintSuggestions([]);
                             // track selected complaints list (preserve old behavior)
                             setSelectedComplaints(prev => {
