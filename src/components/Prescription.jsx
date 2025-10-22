@@ -49,6 +49,18 @@ const Prescription = ({ patientId, onClose }) => {
   const [testAdviceRows, setTestAdviceRows] = useState([{ testName: "", testType: "", precautions: "", testDate: "" }]);
   const [medicationAdvice, setMedicationAdvice] = useState("");
   const [dietAdvice, setDietAdvice] = useState("");
+  // helper: dedupe (case-insensitive) and sort lines alphabetically (case-insensitive)
+  const dedupeAndSortLines = (text) => {
+    if (!text) return '';
+    const lines = String(text).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const map = new Map();
+    lines.forEach(l => {
+      const key = l.toLowerCase();
+      if (!map.has(key)) map.set(key, l);
+    });
+    // sort by lowercase key
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([k, v]) => v).join('\n');
+  };
   const [originalPayload, setOriginalPayload] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
   // Checkbox toggle for advice types
@@ -654,13 +666,12 @@ const Prescription = ({ patientId, onClose }) => {
                             // allow manual typing to show in the input
                             setInitialComplain(e.target.value);
                             setComplaintQuery(e.target.value);
-                            // debounce server query (only for last token)
+                            // debounce server query (only for last token after last comma)
                             if (complainDebounceRef.current) clearTimeout(complainDebounceRef.current);
                             complainDebounceRef.current = setTimeout(async () => {
-                              const q = (e.target.value || '').trim();
-                              // get last token for server suggestions (after comma/space)
-                              const parts = (e.target.value || '').split(/[,\s]+/);
-                              const last = (parts[parts.length - 1] || '').trim();
+                              const val = (e.target.value || '');
+                              // only consider the substring after the last comma as the token to query
+                              const last = (val.split(',').pop() || '').trim();
                               if (!last) return setComplaintSuggestions([]);
                               try {
                                 setIsFetchingComplaints(true);
@@ -677,16 +688,34 @@ const Prescription = ({ patientId, onClose }) => {
                           onSelect={(item, newVal) => {
                             // determine label
                             const label = (item && typeof item === 'object') ? (item.name || (typeof newVal === 'string' ? newVal : '')) : (typeof newVal === 'string' ? newVal : (item || ''));
-                            // Append selected label to the existing initialComplain as comma-separated values
+                            // Replace last partial token (if present) or append selected label as a new token.
                             setInitialComplain(prev => {
-                              const cur = prev || '';
-                              // split existing by comma and whitespace, keep non-empty
-                              const parts = cur.split(/[,\s]+/).map(p => p.trim()).filter(Boolean);
-                              // if last token is partial (user typed), keep it as part of the sentence; we want to append selection as a separate token
-                              // If the selected label duplicates an existing token, avoid adding duplicate
-                              if (parts.includes(label)) return parts.join(', ') + (parts.length ? ', ' : '');
-                              const newParts = parts.concat([label]);
-                              return newParts.join(', ') + ', ';
+                              const cur = (prev || '');
+                              // Keep everything before the last comma intact
+                              const lastCommaIdx = cur.lastIndexOf(',');
+                              const before = lastCommaIdx === -1 ? '' : cur.slice(0, lastCommaIdx + 1); // includes comma
+                              const after = lastCommaIdx === -1 ? cur : cur.slice(lastCommaIdx + 1);
+                              const lastToken = (after || '').trim();
+
+                              // tokens from before (for dedupe check)
+                              const existingTokens = (before ? before.split(',').map(p => p.trim()).filter(Boolean) : []).concat(lastToken ? [lastToken] : []).filter(Boolean);
+                              if (existingTokens.includes(label) && lastToken === label) {
+                                // already identical to last token; ensure trailing comma+space
+                                const base = (before ? before : '') + label;
+                                return base.endsWith(',') ? base + ' ' : base + ', ';
+                              }
+
+                              // if last token is non-empty and there's no trailing comma, replace it
+                              const hasTrailingComma = cur.trim().endsWith(',');
+                              if (lastToken && !hasTrailingComma) {
+                                const prefix = before; // keep prefix including comma if present
+                                return (prefix ? (prefix.endsWith(' ') ? prefix : prefix + ' ') : '') + label + ', ';
+                              }
+
+                              // otherwise append as new token
+                              const base = cur.trim();
+                              const prefix = base ? (base.endsWith(',') ? base + ' ' : base + ', ') : '';
+                              return prefix + label + ', ';
                             });
                             setComplaintSuggestions([]);
                             // track selected complaints list (preserve old behavior)
@@ -704,40 +733,66 @@ const Prescription = ({ patientId, onClose }) => {
                             else autoPopulateFromComplaint(label, false, true);
                           }}
                         />
-                        <button type="button" className="add-btn" style={{minWidth:"fit-content"}} onClick={() => autoPopulateFromComplaint(initialComplain, true)} disabled={!initialComplain || initialComplain.trim().length < 2}>{autoPopulating ? 'Populating...' : 'Auto-populate'}</button>
-                        <button type="button" className="btn secondary" style={{minWidth:"fit-content"}} onClick={async () => {
+                        <button type="button" className="icon-btn" title={autoPopulating ? 'Populating...' : 'Auto-populate'} style={{minWidth:"fit-content"}} onClick={() => autoPopulateFromComplaint(initialComplain, true)} disabled={!initialComplain || initialComplain.trim().length < 2}>{autoPopulating ? '⏳' : '⚡'}</button>
+                        <button type="button" className="icon-btn secondary" title="Analyze" style={{minWidth:"fit-content"}} onClick={async () => {
                           // call analyze on selected complaints/symptoms
                           const symptoms = selectedComplaints.length ? selectedComplaints.flatMap(c => (c.symptoms || (typeof c === 'string' ? [c] : []))) : (initialComplain ? [initialComplain] : []);
                           try {
                             const { data } = await api.post(`/api/v1/medical/analyze`, { symptoms });
                             setAnalyzeResult(data.suggested || null);
                             if (data.suggested) {
-                              // apply suggested aggregated results (merge)
-                              if (data.suggested.medicines && data.suggested.medicines.length) {
-                                // merge by name
+                              // apply suggested aggregated results (merge + normalize + dedupe)
+                              // medicines: normalize names and dedupe (case-insensitive)
+                              if (Array.isArray(data.suggested.medicines) && data.suggested.medicines.length) {
                                 setMedicineAdvice(prev => {
-                                  const map = new Map();
-                                  (prev || []).forEach(p => { if (p && p.name) map.set(p.name, p); });
-                                  data.suggested.medicines.forEach(m => { if (m && m.name) map.set(m.name, m); });
-                                  return Array.from(map.values());
+                                  const seen = new Map();
+                                  // add existing
+                                  (prev || []).forEach(p => {
+                                    if (!p || !p.name) return;
+                                    const key = (p.name || '').toLowerCase().trim();
+                                    if (!seen.has(key)) {
+                                      seen.set(key, { name: (p.name || '').trim(), type: p.type || '', dose: p.dose || '', frequency: p.frequency || '', route: p.route || '', duration: p.duration || '' });
+                                    }
+                                  });
+                                  // add suggested
+                                  data.suggested.medicines.forEach(m => {
+                                    if (!m || !m.name) return;
+                                    const nm = (typeof m === 'string') ? m : (m.name || '');
+                                    const key = (nm || '').toLowerCase().trim();
+                                    if (!seen.has(key)) {
+                                      seen.set(key, { name: nm.trim(), type: m.type || '', dose: m.dose || '', frequency: m.frequency || '', route: m.route || '', duration: m.duration || '' });
+                                    }
+                                  });
+                                  return Array.from(seen.values());
                                 });
                               }
-                              if (data.suggested.testAdvice && data.suggested.testAdvice.length) {
+                              // test advice: dedupe by testName
+                              if (Array.isArray(data.suggested.testAdvice) && data.suggested.testAdvice.length) {
                                 setTestAdviceRows(prev => {
-                                  const map = new Map();
-                                  (prev || []).forEach(p => { if (p && p.testName) map.set(p.testName, p); });
-                                  data.suggested.testAdvice.forEach(t => { if (t && t.testName) map.set(t.testName, t); });
-                                  return Array.from(map.values());
+                                  const seen = new Map();
+                                  (prev || []).forEach(p => { if (p && p.testName) seen.set((p.testName||'').toLowerCase().trim(), p); });
+                                  data.suggested.testAdvice.forEach(t => { if (t && t.testName) seen.set((t.testName||'').toLowerCase().trim(), { testName: (t.testName||'').trim(), testType: t.testType || '', precautions: t.precautions || '', testDate: t.testDate || '' }); });
+                                  return Array.from(seen.values());
                                 });
                                 setSelectedTestTypes(prev => Array.from(new Set([...(prev || []), 'Test Advice'])));
                               }
-                              if (data.suggested.medication) setMedicationAdvice(prev => (prev ? prev + '\n' + data.suggested.medication : data.suggested.medication));
-                              if (data.suggested.diet) setDietAdvice(prev => (prev ? prev + '\n' + data.suggested.diet : data.suggested.diet));
+                              // medication advice (string): split lines, dedupe
+                              if (data.suggested.medication) {
+                                setMedicationAdvice(prev => dedupeAndSortLines(((prev || '') + '\n' + data.suggested.medication)));
+                                setSelectedTestTypes(prev => Array.from(new Set([...(prev || []), 'Medication'])));
+                              }
+                              // diet advice (string): split lines, dedupe
+                              if (data.suggested.diet) {
+                                setDietAdvice(prev => dedupeAndSortLines(((prev || '') + '\n' + data.suggested.diet)));
+                                setSelectedTestTypes(prev => Array.from(new Set([...(prev || []), 'Diet'])));
+                              }
                             }
                           } catch (err) {
                             toast.error('Analysis failed');
                           }
-                        }}>Analyze</button>
+                        }}>
+                          🔬
+                        </button>
                       </div>
                       <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                         {(selectedComplaints || []).map((c, i) => (

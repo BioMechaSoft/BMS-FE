@@ -7,13 +7,13 @@ export default function AutoSuggestInput({ value, onChange, suggestions = [], pl
   const [highlight, setHighlight] = useState(0);
   const ref = useRef();
 
-  // Get the last token after comma or space for suggestions (multi) or whole value (single)
-  // Accept both comma and whitespace as separators so suggestions show after typing a space or comma.
+  // Get the last token after the last comma for suggestions (multi) or whole value (single)
+  // Only comma is treated as the token separator so typing a space won't trigger suggestions.
   const getLastToken = (val) => {
     if (!val) return '';
     if (single) return val.trim();
-    // split on comma or whitespace sequences and return last token
-    const parts = val.split(/[,\s]+/);
+    // split only on commas and return the last token
+    const parts = val.split(',');
     return (parts[parts.length - 1] || '').trim();
   };
 
@@ -40,7 +40,11 @@ export default function AutoSuggestInput({ value, onChange, suggestions = [], pl
   }, [value, suggestions, single]);
 
   function handleKey(e) {
-    if (!show) setShow(true);
+    // if user types a comma, show suggestions for the new token
+    if (e.key === ',') {
+      setShow(true);
+      return;
+    }
     if (e.key === "ArrowDown") {
       setHighlight(h => Math.min(h + 1, filtered.length - 1));
     } else if (e.key === "ArrowUp") {
@@ -81,9 +85,16 @@ export default function AutoSuggestInput({ value, onChange, suggestions = [], pl
         autoComplete="off"
         onChange={e => {
           onChange(e);
-          setShow(true);
+          // show suggestions only when user is typing after a comma (or if in single mode)
+          const v = e.target.value || '';
+          if (single) setShow(true);
+          else setShow(v.indexOf(',') !== -1);
         }}
-        onFocus={() => setShow(true)}
+        onFocus={() => {
+          const v = value || '';
+          if (single) setShow(true);
+          else setShow(v.indexOf(',') !== -1);
+        }}
         onKeyDown={handleKey}
       />
       {show && filtered.length > 0 && (
