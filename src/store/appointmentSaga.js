@@ -22,6 +22,19 @@ function* createAppointmentSaga(action) {
       yield put(createAppointmentSuccess(payload));
       toast.success(data.message || 'Appointment created');
       // Invoice creation is handled by the backend now; no client-side auto-create.
+      // If client requested appointment to be marked Paid on creation, settle invoices now so payments are recorded
+      try {
+        if (action.payload && action.payload.payload && action.payload.payload.paymentStatus === 'Paid') {
+          const apptId = (data.appointment && data.appointment._id) || (data.appointment && data.appointment.id) || (data._id || data.id);
+          if (apptId) {
+            yield call(api.post, `/api/v1/invoice/appointment/${apptId}/settle`);
+            // refresh or notify user
+            toast.success('Appointment invoices settled');
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to auto-settle invoices after appointment creation', e.message || e);
+      }
     }
   } catch (err) {
     const msg = err?.response?.data?.message || err.message || 'Appointment failed';

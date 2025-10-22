@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import api from '../utils/api';
 import './ReportsPage.css';
 import ReportRow from './ReportRow';
+import './InvoiceEditor.css';
 
 const fmt = (n) => {
   const v = Number(n) || 0;
@@ -30,6 +31,13 @@ const ReportsPage = () => {
   const [groups, setGroups] = useState([]);
   const [usePersisted, setUsePersisted] = useState(false);
   const [reportEntries, setReportEntries] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+  const [drawerAppointmentId, setDrawerAppointmentId] = useState(null);
+  const [invoicesForAppointment, setInvoicesForAppointment] = useState([]);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [invoiceSaving, setInvoiceSaving] = useState(false);
   const [reportPage, setReportPage] = useState(1);
   const [reportTotal, setReportTotal] = useState(0);
   const [patientsThisMonth, setPatientsThisMonth] = useState(0);
@@ -71,13 +79,13 @@ const ReportsPage = () => {
 
       // Choose between persisted per-appointment reports or on-the-fly aggregation
       if (usePersisted) {
-        const qparts = [];
+  const qparts = [];
         if (s) qparts.push(`start=${encodeURIComponent(s)}`);
         if (e) qparts.push(`end=${encodeURIComponent(e)}`);
         if (doctorId) qparts.push(`doctorId=${encodeURIComponent(doctorId)}`);
         qparts.push(`page=${reportPage}`);
         qparts.push(`limit=50`);
-        if (opts.q) qparts.push(`q=${encodeURIComponent(opts.q)}`);
+  if (opts.q || searchTerm) qparts.push(`q=${encodeURIComponent(opts.q || searchTerm)}`);
         const qstr = qparts.length ? `?${qparts.join('&')}` : '';
         const repRes = await api.get(`/api/v1/reports${qstr}`);
         const body = repRes.data || {};
@@ -130,6 +138,82 @@ const ReportsPage = () => {
   };
 
   useEffect(() => { fetchSummary(); }, []);
+
+  // fetch invoices for an appointment and open drawer
+  const openInvoiceDrawer = async (appointmentId) => {
+    setDrawerLoading(true);
+    setDrawerAppointmentId(appointmentId);
+    setDrawerOpen(true);
+    try {
+      const res = await api.get(`/api/v1/invoice/appointment/${appointmentId}`);
+      setInvoicesForAppointment(res.data.invoices || []);
+    } catch (e) {
+      setInvoicesForAppointment([]);
+    } finally {
+      setDrawerLoading(false);
+    }
+  };
+
+  const closeDrawer = () => {
+    setDrawerOpen(false);
+    setDrawerAppointmentId(null);
+    setInvoicesForAppointment([]);
+    setSelectedInvoice(null);
+  };
+
+  const editInvoice = (inv) => {
+    setSelectedInvoice({ ...inv });
+  };
+
+  const saveInvoice = async () => {
+    if (!selectedInvoice || !selectedInvoice._id) return;
+    setInvoiceSaving(true);
+    try {
+      const payload = { ...selectedInvoice };
+      // avoid sending populated objects for patient/doctor/appointment
+      delete payload.patient;
+      delete payload.doctor;
+      delete payload.appointment;
+      const res = await api.put(`/api/v1/invoice/${selectedInvoice._id}`, payload);
+      // refresh list
+      const refreshed = await api.get(`/api/v1/invoice/appointment/${drawerAppointmentId}`);
+      setInvoicesForAppointment(refreshed.data.invoices || []);
+      setSelectedInvoice(null);
+      fetchSummary();
+    } catch (e) {
+      console.warn('Failed to save invoice', e);
+    } finally {
+      setInvoiceSaving(false);
+    }
+  };
+
+  const deleteInvoice = async (id) => {
+    if (!window.confirm('Delete invoice? This cannot be undone.')) return;
+    try {
+      await api.delete(`/api/v1/invoice/${id}`);
+      const refreshed = await api.get(`/api/v1/invoice/appointment/${drawerAppointmentId}`);
+      setInvoicesForAppointment(refreshed.data.invoices || []);
+      fetchSummary();
+    } catch (e) {
+      console.warn('Failed to delete invoice', e);
+    }
+  };
+
+  const settleInvoice = async (inv) => {
+    try {
+      // call explicit settle endpoint which will append payment and normalize
+      await api.post(`/api/v1/invoice/${inv._id}/settle`);
+      const refreshed = await api.get(`/api/v1/invoice/appointment/${drawerAppointmentId}`);
+      setInvoicesForAppointment(refreshed.data.invoices || []);
+      fetchSummary();
+    } catch (e) {
+      console.warn('Failed to settle invoice', e);
+    }
+  };
+
+  const onSearchKey = (e) => {
+    if (e.key === 'Enter') fetchSummary({ q: searchTerm });
+  };
 
   const downloadCSV = () => {
     if (usePersisted) {
@@ -231,33 +315,134 @@ const ReportsPage = () => {
         </div>
       </div>
 
-      <div className="table-wrap">
-        <table className="reports-table">
-          <thead>
-            <tr>
-              <th>Period</th>
-              <th>Paid</th>
-              <th>Due</th>
-              <th>Invoiced</th>
-              <th>Count</th>
-            </tr>
-          </thead>
-          <tbody>
-            {groups.map((g) => (
-              <tr key={g.period}>
-                <td>{g.period}</td>
-                <td>{fmt(g.revenue || g.totalEarning || 0)}</td>
-                <td>{fmt(g.due || g.totalDue || 0)}</td>
-                <td>{fmt((Number(g.revenue || g.totalEarning || 0) + Number(g.due || g.totalDue || 0)))}</td>
-                <td>{g.count || g.invoices || g.appointments || ''}</td>
-              </tr>
-            ))}
-            {groups.length === 0 && (
-              <tr><td colSpan={5} style={{textAlign:'center', padding:16}}>No data for selected filters</td></tr>
-            )}
-          </tbody>
-        </table>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:12}}>
+        <div style={{display:'flex',gap:8,alignItems:'center'}}>
+          <input placeholder="Search reports by appointment id or patient" value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} onKeyDown={onSearchKey} />
+          <button className="btn" onClick={()=>fetchSummary({ q: searchTerm })}>Search</button>
+        </div>
+        <div>
+          <button className="btn" onClick={()=>{ setUsePersisted(true); fetchSummary(); }}>Switch to Persisted Entries</button>
+        </div>
       </div>
+
+      <div className="table-wrap">
+        {usePersisted ? (
+          <table className="reports-table">
+            <thead>
+              <tr>
+                <th>AppointmentId</th>
+                <th>Date</th>
+                <th>Doctor</th>
+                <th>Amount</th>
+                <th>Paid</th>
+                <th>Due</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(reportEntries || []).map((r) => (
+                <tr key={r._id}>
+                  <td style={{maxWidth:180, overflow:'hidden', textOverflow:'ellipsis'}}>{r.appointmentId}</td>
+                  <td>{r.appointmentDate ? String(r.appointmentDate).slice(0,10) : ''}</td>
+                  <td>{r.doctorId && (r.doctorId.firstName || r.doctorId.name) ? `${r.doctorId.firstName||r.doctorId.name} ${r.doctorId.lastName||''}` : (r.doctorId || '')}</td>
+                  <td>{fmt(r.amount)}</td>
+                  <td>{fmt(r.paid || r.revenue)}</td>
+                  <td>{fmt(r.due)}</td>
+                  <td>{r.status}</td>
+                  <td style={{display:'flex',gap:8}}>
+                    <button className="btn" onClick={()=>openInvoiceDrawer(r.appointmentId)}>View Invoices</button>
+                    <button className="btn" onClick={async ()=>{ if(window.confirm('Delete this report entry?')) { await api.delete(`/api/v1/reports/${r._id}`); fetchSummary(); } }}>Delete</button>
+          <button className="btn" onClick={async ()=>{ if(window.confirm('Mark this appointment as Paid? This will settle all invoices for the appointment.')) { try { await api.put(`/api/v1/invoice/appointment/${r.appointmentId}`, { payments: [{ amount: 0 }] }); // trigger update route to be safe
+            // better: fetch all invoices and call settle on each
+            const invs = await api.get(`/api/v1/invoice/appointment/${r.appointmentId}`); if (invs.data && Array.isArray(invs.data.invoices)) { for (const ii of invs.data.invoices) { await api.post(`/api/v1/invoice/${ii._id}/settle`); } }
+            fetchSummary(); } catch(e){ console.warn('Mark paid failed', e); } } }}>Mark Paid</button>
+                  </td>
+                </tr>
+              ))}
+              {(!reportEntries || reportEntries.length === 0) && (
+                <tr><td colSpan={8} style={{textAlign:'center', padding:16}}>No report entries found</td></tr>
+              )}
+            </tbody>
+          </table>
+        ) : (
+          <table className="reports-table">
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>Paid</th>
+                <th>Due</th>
+                <th>Invoiced</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              {groups.map((g) => (
+                <tr key={g.period}>
+                  <td>{g.period}</td>
+                  <td>{fmt(g.revenue || g.totalEarning || 0)}</td>
+                  <td>{fmt(g.due || g.totalDue || 0)}</td>
+                  <td>{fmt((Number(g.revenue || g.totalEarning || 0) + Number(g.due || g.totalDue || 0)))}</td>
+                  <td>{g.count || g.invoices || g.appointments || ''}</td>
+                </tr>
+              ))}
+              {groups.length === 0 && (
+                <tr><td colSpan={5} style={{textAlign:'center', padding:16}}>No data for selected filters</td></tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Drawer for invoices */}
+      {drawerOpen && <div className="invoice-overlay" onClick={closeDrawer}></div>}
+      {drawerOpen && (
+        <div className="invoice-drawer">
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <h3>Invoices for {drawerAppointmentId}</h3>
+            <div>
+              <button className="btn" onClick={closeDrawer}>Close</button>
+            </div>
+          </div>
+          {drawerLoading && <p>Loading...</p>}
+          {!drawerLoading && (
+            <div>
+              <div className="invoice-list">
+                {invoicesForAppointment.map(inv => (
+                  <div key={inv._id} className="invoice-item">
+                    <div className="meta">
+                      <strong>{inv.invoiceNumber || inv._id}</strong>
+                      <small>Total: {fmt(inv.total)}</small>
+                      <small>Paid: {(inv.payments||[]).reduce((s,p)=>s+(Number(p.amount)||0),0)}</small>
+                      <small>Status: {inv.status}</small>
+                    </div>
+                    <div style={{display:'flex',gap:6}}>
+                      <button className="btn-small" onClick={()=>editInvoice(inv)}>Edit</button>
+                      <button className="btn-small" onClick={()=>settleInvoice(inv)}>Settle</button>
+                      <button className="btn-small" style={{background:'#d9534f'}} onClick={()=>deleteInvoice(inv._id)}>Delete</button>
+                    </div>
+                  </div>
+                ))}
+                {invoicesForAppointment.length === 0 && <div>No invoices for this appointment</div>}
+              </div>
+
+              {selectedInvoice && (
+                <div className="invoice-editor">
+                  <h4>Edit Invoice {selectedInvoice.invoiceNumber || selectedInvoice._id}</h4>
+                  <label>Invoice Number<input value={selectedInvoice.invoiceNumber||''} onChange={(e)=>setSelectedInvoice(s=>({...s, invoiceNumber: e.target.value}))} /></label>
+                  <label>Total<input value={selectedInvoice.total||0} onChange={(e)=>setSelectedInvoice(s=>({...s, total: Number(e.target.value||0)}))} /></label>
+                  <label>Status<select value={selectedInvoice.status||'Unpaid'} onChange={(e)=>setSelectedInvoice(s=>({...s, status: e.target.value}))} ><option>Unpaid</option><option>Partial</option><option>Paid</option></select></label>
+                  <label>Notes<textarea value={selectedInvoice.notes||''} onChange={(e)=>setSelectedInvoice(s=>({...s, notes: e.target.value}))} /></label>
+                  <div style={{display:'flex',gap:8}}>
+                    <button className="btn" onClick={saveInvoice} disabled={invoiceSaving}>{invoiceSaving ? 'Saving...' : 'Save'}</button>
+                    <button className="btn" onClick={()=>setSelectedInvoice(null)}>Cancel</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 };

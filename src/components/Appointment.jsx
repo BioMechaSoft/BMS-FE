@@ -104,33 +104,6 @@ const Appointment = () => {
     checkDashboard();
   }, []);
 
-  // Click outside to close suggestions
-  useEffect(() => {
-    const onDocClick = (e) => {
-      if (suggestRef.current && !suggestRef.current.contains(e.target)) {
-        setShowPatientSuggestions(false);
-      }
-    };
-    document.addEventListener("click", onDocClick);
-    return () => document.removeEventListener("click", onDocClick);
-  }, []);
-
-  // keyboard: Ctrl/Cmd+P => submit & download, global for this form
-  useEffect(() => {
-    const handler = async (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
-        e.preventDefault();
-        setDownloadInvoice(true);
-        //Todo: submit after setting state (give React a tick)
-        setTimeout(() => {
-          handleAppointment();
-        }, 50);
-      }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, []);
-
   // keyboard navigation inside the appointment form
   useEffect(() => {
     const selector =
@@ -764,20 +737,14 @@ const Appointment = () => {
                 <div className="diagnosis-grid">
                   <div className="diagnosis-grid-col">
                     <div>
-                      {/* <label htmlFor="">BP: </label> */}
                       <input
                         type="text"
                         placeholder="BP"
                         value={BP}
-                        // onChange={(e) => setBP(e.target.value)}
-                        onChange={(e)=>{
-                          setBP(e.target.value)
-                          setDiagnosys({BP:BP})
-                        }}
+                        onChange={(e) => setBP(e.target.value)}
                       />
                     </div>
                     <div>
-                      {/* <label htmlFor="">Diabetes: </label> */}
                       <input
                         type="text"
                         placeholder="Diabetes"
@@ -789,7 +756,6 @@ const Appointment = () => {
 
                   <div className="diagnosis-grid-col">
                     <div>
-                      {/* <label htmlFor="">SPO2: </label> */}
                       <input
                         type="text"
                         placeholder="SPO2"
@@ -798,7 +764,6 @@ const Appointment = () => {
                       />
                     </div>
                     <div>
-                      {/* <label htmlFor="">Height: </label> */}
                       <input
                         type="text"
                         placeholder="Height"
@@ -810,7 +775,6 @@ const Appointment = () => {
 
                   <div className="diagnosis-grid-col">
                     <div>
-                      {/* <label htmlFor="">Width: </label> */}
                       <input
                         type="text"
                         placeholder="Weight"
@@ -819,7 +783,6 @@ const Appointment = () => {
                       />
                     </div>
                     <div>
-                      {/* <label htmlFor="">Others: </label> */}
                       <textarea
                         rows="1"
                         value={others}
@@ -830,7 +793,6 @@ const Appointment = () => {
                   </div>
                 </div>
 
-                {/* <div className="lnr-input-box"> */}
                 <div className="fees-detail-box">
                   Appointment Fee: {price} Rs
                   <br />
@@ -838,54 +800,20 @@ const Appointment = () => {
                   <br />
                   <b>Total: {price + doctorFee} Rs</b>
                 </div>
-                {/* </div> */}
 
                 <div style={{ marginTop: "2rem" }}>
                   <div className="invoice-container">
-                    <div
-                      className="checkbox-container"
-                      style={{ marginTop: "1rem" }}
-                    >
-                      {/* <label
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                          paddingRight: "1rem",
-                        }}
-                      >
-                        Download invoice
-                        <input
-                          type="checkbox"
-                          checked={downloadInvoice}
-                          onChange={(e) => setDownloadInvoice(e.target.checked)}
-                        />
-                      </label> */}
+                    <div className="checkbox-container" style={{ marginTop: "1rem" }}>
                       <div className="pay-status-box">
                         <label htmlFor="">Payment Status: </label>
-                        <select
-                          value={paymentStatus}
-                          onChange={(e) => setPaymentStatus(e.target.value)}
-                          // style={{ marginLeft: "0.5rem" }}
-                        >
+                        <select value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)}>
                           <option value="Pending">Pending</option>
-                          <option value="Accepted">Paid</option>
+                          <option value="Paid">Paid</option>
                         </select>
                       </div>
 
                       <div className="btn-container">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setInvoiceFields({
-                              address,
-                              doctorFee,
-                              price,
-                              paymentStatus,
-                            });
-                            setShowInvoicePreview(true);
-                          }}
-                        >
+                        <button type="button" onClick={() => { setInvoiceFields({ address, doctorFee, price, paymentStatus }); setShowInvoicePreview(true); }}>
                           Preview
                         </button>
                       </div>
@@ -894,9 +822,7 @@ const Appointment = () => {
                 </div>
 
                 <div className="btn-container">
-                  <button type="button" onClick={() => setStep(1)}>
-                    Back
-                  </button>
+                  <button type="button" onClick={() => setStep(1)}>Back</button>
                   <button type="submit">GET APPOINTMENT</button>
                 </div>
               </div>
@@ -1029,19 +955,19 @@ const Appointment = () => {
           <div>Paid by: Cash</div>
           <div>
             Payment Status:
-            <select
-              value={invoiceFields.paymentStatus}
-              onChange={(e) =>
-                setInvoiceFields((f) => ({
-                  ...f,
-                  paymentStatus: e.target.value,
-                }))
-              }
-              style={{ marginLeft: "0.5rem" }}
-            >
-              <option value="Pending">Pending</option>
-              <option value="Accepted">Paid</option>
-            </select>
+              <select
+                value={invoiceFields.paymentStatus}
+                onChange={(e) =>
+                  setInvoiceFields((f) => ({
+                    ...f,
+                    paymentStatus: e.target.value,
+                  }))
+                }
+                style={{ marginLeft: "0.5rem" }}
+              >
+                <option value="Pending">Pending</option>
+                <option value="Paid">Paid</option>
+              </select>
           </div>
         </div>
         <div style={{ marginTop: "2rem", textAlign: "right" }}>
@@ -1087,7 +1013,7 @@ const Appointment = () => {
               doc.text(`Paid by: Cash`, 20, 114);
               doc.text(
                 `Payment Status: ${
-                  invoiceFields.paymentStatus === "Accepted"
+                  invoiceFields.paymentStatus === "Paid"
                     ? "Paid"
                     : "Pending"
                 }`,
