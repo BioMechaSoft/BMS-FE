@@ -651,16 +651,20 @@ const Prescription = ({ patientId, onClose }) => {
                           style={{ flex: 1 }}
                           value={initialComplain}
                           onChange={e => {
+                            // allow manual typing to show in the input
                             setInitialComplain(e.target.value);
                             setComplaintQuery(e.target.value);
-                            // debounce server query
+                            // debounce server query (only for last token)
                             if (complainDebounceRef.current) clearTimeout(complainDebounceRef.current);
                             complainDebounceRef.current = setTimeout(async () => {
                               const q = (e.target.value || '').trim();
-                              if (!q) return setComplaintSuggestions([]);
+                              // get last token for server suggestions (after comma/space)
+                              const parts = (e.target.value || '').split(/[,\s]+/);
+                              const last = (parts[parts.length - 1] || '').trim();
+                              if (!last) return setComplaintSuggestions([]);
                               try {
                                 setIsFetchingComplaints(true);
-                                const { data } = await api.get(`/api/v1/medical/suggestions/advices`, { params: { q, limit: 100 } });
+                                const { data } = await api.get(`/api/v1/medical/suggestions/advices`, { params: { q: last, limit: 100 } });
                                 // server returns advices
                                 setComplaintSuggestions((data.advices || []).map(a => ({ ...a, label: a.name })));
                               } catch (err) {
@@ -671,12 +675,22 @@ const Prescription = ({ patientId, onClose }) => {
                           suggestions={complaintSuggestions.length ? complaintSuggestions : symptomSuggestions}
                           placeholder="Type to search complaints or symptoms..."
                           onSelect={(item, newVal) => {
-                            // if item is advice object, add to selected complaints and auto-append mapped data
-                            const label = (item && typeof item === 'object') ? (item.name || newVal) : (newVal || item);
-                            setInitialComplain('');
+                            // determine label
+                            const label = (item && typeof item === 'object') ? (item.name || (typeof newVal === 'string' ? newVal : '')) : (typeof newVal === 'string' ? newVal : (item || ''));
+                            // Append selected label to the existing initialComplain as comma-separated values
+                            setInitialComplain(prev => {
+                              const cur = prev || '';
+                              // split existing by comma and whitespace, keep non-empty
+                              const parts = cur.split(/[,\s]+/).map(p => p.trim()).filter(Boolean);
+                              // if last token is partial (user typed), keep it as part of the sentence; we want to append selection as a separate token
+                              // If the selected label duplicates an existing token, avoid adding duplicate
+                              if (parts.includes(label)) return parts.join(', ') + (parts.length ? ', ' : '');
+                              const newParts = parts.concat([label]);
+                              return newParts.join(', ') + ', ';
+                            });
                             setComplaintSuggestions([]);
+                            // track selected complaints list (preserve old behavior)
                             setSelectedComplaints(prev => {
-                              // dedupe by name
                               const names = new Set((prev || []).map(p => p.name || p));
                               if (item && typeof item === 'object') {
                                 if (names.has(item.name)) return prev || [];
@@ -685,9 +699,9 @@ const Prescription = ({ patientId, onClose }) => {
                               if (names.has(label)) return prev || [];
                               return [...(prev || []), label];
                             });
-                            // append mapped items
+                            // append mapped items to medicines/tests/diet if item is object
                             if (item && typeof item === 'object') autoPopulateFromComplaint(item, true, true);
-                            else autoPopulateFromComplaint(newVal || item, false, true);
+                            else autoPopulateFromComplaint(label, false, true);
                           }}
                         />
                         <button type="button" className="add-btn" style={{minWidth:"fit-content"}} onClick={() => autoPopulateFromComplaint(initialComplain, true)} disabled={!initialComplain || initialComplain.trim().length < 2}>{autoPopulating ? 'Populating...' : 'Auto-populate'}</button>

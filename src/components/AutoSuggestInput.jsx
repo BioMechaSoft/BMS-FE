@@ -7,12 +7,14 @@ export default function AutoSuggestInput({ value, onChange, suggestions = [], pl
   const [highlight, setHighlight] = useState(0);
   const ref = useRef();
 
-  // Get the last token after comma for suggestions (multi) or whole value (single)
+  // Get the last token after comma or space for suggestions (multi) or whole value (single)
+  // Accept both comma and whitespace as separators so suggestions show after typing a space or comma.
   const getLastToken = (val) => {
     if (!val) return '';
     if (single) return val.trim();
-    const parts = val.split(',');
-    return parts[parts.length - 1].trim();
+    // split on comma or whitespace sequences and return last token
+    const parts = val.split(/[,\s]+/);
+    return (parts[parts.length - 1] || '').trim();
   };
 
   const labelOf = (item) => {
