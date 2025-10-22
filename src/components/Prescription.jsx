@@ -22,7 +22,6 @@ const Prescription = ({ patientId, onClose }) => {
   const [complaintQuery, setComplaintQuery] = useState("");
   const [complaintSuggestions, setComplaintSuggestions] = useState([]);
   const [selectedComplaints, setSelectedComplaints] = useState([]);
-  const [complaintInput, setComplaintInput] = useState('');
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
   const [isFetchingComplaints, setIsFetchingComplaints] = useState(false);
   const [analyzeResult, setAnalyzeResult] = useState(null);
@@ -650,26 +649,19 @@ const Prescription = ({ patientId, onClose }) => {
                       <div style={{ display: 'flex', width: '100%', gap: '0.5rem', alignItems: 'center' }}>
                         <AutoSuggestInput
                           style={{ flex: 1 }}
-                          moveCaretToEnd
-                          value={(() => {
-                            const sel = (selectedComplaints || []).map(x => (x && x.name) ? x.name : x).filter(Boolean);
-                            const pending = (complaintInput || '').trim();
-                            return sel.length ? (sel.join(', ') + (pending ? ', ' + pending : '')) : pending;
-                          })()}
+                          value={initialComplain}
                           onChange={e => {
-                            const v = e.target.value || '';
-                            // interpret last token as the editable fragment
-                            const parts = v.split(',');
-                            const last = (parts[parts.length - 1] || '').trim();
-                            setComplaintInput(last);
-                            setComplaintQuery(last);
+                            setInitialComplain(e.target.value);
+                            setComplaintQuery(e.target.value);
+                            // debounce server query
                             if (complainDebounceRef.current) clearTimeout(complainDebounceRef.current);
                             complainDebounceRef.current = setTimeout(async () => {
-                              const q = (last || '').trim();
+                              const q = (e.target.value || '').trim();
                               if (!q) return setComplaintSuggestions([]);
                               try {
                                 setIsFetchingComplaints(true);
                                 const { data } = await api.get(`/api/v1/medical/suggestions/advices`, { params: { q, limit: 100 } });
+                                // server returns advices
                                 setComplaintSuggestions((data.advices || []).map(a => ({ ...a, label: a.name })));
                               } catch (err) {
                                 setComplaintSuggestions([]);
@@ -679,34 +671,21 @@ const Prescription = ({ patientId, onClose }) => {
                           suggestions={complaintSuggestions.length ? complaintSuggestions : symptomSuggestions}
                           placeholder="Type to search complaints or symptoms..."
                           onSelect={(item, newVal) => {
+                            // if item is advice object, add to selected complaints and auto-append mapped data
                             const label = (item && typeof item === 'object') ? (item.name || newVal) : (newVal || item);
-                            const pending = (complaintInput || '').trim();
+                            setInitialComplain('');
                             setComplaintSuggestions([]);
                             setSelectedComplaints(prev => {
-                              const names = new Set((prev || []).map(p => (p && p.name) ? p.name : p));
-                              const next = prev ? [...prev] : [];
-                              if (pending && !names.has(pending)) {
-                                next.push(pending);
-                                names.add(pending);
-                              }
+                              // dedupe by name
+                              const names = new Set((prev || []).map(p => p.name || p));
                               if (item && typeof item === 'object') {
-                                if (names.has(item.name)) {
-                                  setInitialComplain(next.map(x => (x && x.name) ? x.name : x).join(', '));
-                                  return next;
-                                }
-                                next.push(item);
-                                setInitialComplain(next.map(x => (x && x.name) ? x.name : x).join(', '));
-                                return next;
+                                if (names.has(item.name)) return prev || [];
+                                return [...(prev || []), item];
                               }
-                              if (names.has(label)) {
-                                setInitialComplain(next.map(x => (x && x.name) ? x.name : x).join(', '));
-                                return next;
-                              }
-                              next.push(label);
-                              setInitialComplain(next.map(x => (x && x.name) ? x.name : x).join(', '));
-                              return next;
+                              if (names.has(label)) return prev || [];
+                              return [...(prev || []), label];
                             });
-                            setComplaintInput('');
+                            // append mapped items
                             if (item && typeof item === 'object') autoPopulateFromComplaint(item, true, true);
                             else autoPopulateFromComplaint(newVal || item, false, true);
                           }}

@@ -1,12 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./AutoSuggestInput.css";
 
-export default function AutoSuggestInput({ value, onChange, suggestions = [], placeholder = "", single = false, onSelect, moveCaretToEnd = false, ...props }) {
+export default function AutoSuggestInput({ value, onChange, suggestions = [], placeholder = "", single = false, onSelect, ...props }) {
   const [show, setShow] = useState(false);
   const [filtered, setFiltered] = useState([]);
   const [highlight, setHighlight] = useState(0);
   const ref = useRef();
-  const inputRef = useRef();
 
   // Get the last token after comma for suggestions (multi) or whole value (single)
   const getLastToken = (val) => {
@@ -37,17 +36,6 @@ export default function AutoSuggestInput({ value, onChange, suggestions = [], pl
     else setFiltered(suggestions.filter(s => labelOf(s).toLowerCase().includes(last.toLowerCase())));
     setHighlight(0);
   }, [value, suggestions, single]);
-
-  // optionally move caret to end when value changes programmatically
-  useEffect(() => {
-    if (!moveCaretToEnd) return;
-    const el = inputRef.current;
-    if (!el) return;
-    try {
-      const len = (el.value || '').length;
-      el.setSelectionRange(len, len);
-    } catch (err) { /* ignore */ }
-  }, [value, moveCaretToEnd]);
 
   function handleKey(e) {
     if (!show) setShow(true);
@@ -86,7 +74,6 @@ export default function AutoSuggestInput({ value, onChange, suggestions = [], pl
     <div className="autosuggest-input" ref={ref}>
       <input
         {...props}
-        ref={inputRef}
         value={value}
         placeholder={placeholder}
         autoComplete="off"
