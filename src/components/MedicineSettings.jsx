@@ -2,8 +2,9 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import "./Settings.css";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-// import {fa-solid fa-pen} from "@fortawesome/free-solid-svg-icons";
+import MedicineCard from "./MedicineCard";
+import { FaEye, FaPen } from "react-icons/fa";
+import { FaTrash } from "react-icons/fa6";
 
 const emptyForm = {
   name: "",
@@ -44,7 +45,7 @@ const MedicineSettings = () => {
   const [filterType, setFilterType] = useState('');
   const [filterTag, setFilterTag] = useState('');
   const [filterHasTest, setFilterHasTest] = useState('');
-  const [openCardIds, setOpenCardIds] = useState(new Set());
+  const [viewingAdvice, setViewingAdvice] = useState(null);
 
   useEffect(() => {
     fetchMedicines();
@@ -227,6 +228,11 @@ const MedicineSettings = () => {
     // scroll/focus will be handled after drawer mounts via useEffect
   };
 
+  const handleOpenEditDrawer = (advice) => {
+    handleEdit(advice);
+    setDrawerOpen(true);
+  };
+
   const handleDelete = async (id) => {
     if (!confirm("Delete this medicine?")) return;
     try {
@@ -238,6 +244,17 @@ const MedicineSettings = () => {
   };
 
   const clearForm = () => { setForm(emptyForm); setEditingId(null); setError(""); };
+
+  // Helper to get a consistent color for a given string (e.g., medicine type)
+  const getColorForString = (str) => {
+    if (!str) return '#d1d5db'; // gray for empty
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = hash % 360;
+    return `hsl(${hue}, 60%, 88%)`;
+  };
 
 
   return (
@@ -254,120 +271,102 @@ const MedicineSettings = () => {
             </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <input className="search-input" placeholder="Search by name, symptom or type" value={search} onChange={e => setSearch(e.target.value)} style={{ minWidth: 280 }} />
-              <select onChange={e => setFilterType(e.target.value)} value={filterType} style={{ padding: '6px 8px' }}>
-                <option value="">All Types</option>
-                {Array.from(new Set((medicines || []).map(m => m.type).filter(Boolean))).map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
               <button className="add-btn" onClick={() => { setForm(emptyForm); setEditingId(null); setDrawerOpen(true); }}>Create Medical Advice</button>
             </div>
           </div>
 
-          {/* Filters & cards */}
-          <div style={{ display: 'flex', gap: 16 }}>
-            <aside style={{ width: 260, padding: 12, background: '#fff', borderRadius: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-              <h4 style={{ marginTop: 0 }}>Filters</h4>
-              <div style={{ marginBottom: 8 }}>
-                <label className="muted">Tag</label>
-                <input placeholder="tag" value={filterTag || ''} onChange={e => setFilterTag(e.target.value)} />
-              </div>
-              <div style={{ marginBottom: 8 }}>
-                <label className="muted">Has Tests</label>
-                <select value={filterHasTest || ''} onChange={e => setFilterHasTest(e.target.value)}>
-                  <option value="">Either</option>
-                  <option value="yes">With Tests</option>
-                  <option value="no">No Tests</option>
-                </select>
-              </div>
-              <div style={{ marginTop: 12 }}>
-                <button className="clear-btn" onClick={() => { setFilterTag(''); setFilterType(''); setFilterHasTest(''); }}>Reset</button>
-              </div>
-            </aside>
+          {/* Filters Bar */}
+          <div className="filter-bar">
+            <div className="filter-group">
+              <label className="muted">Type</label>
+              <select onChange={e => setFilterType(e.target.value)} value={filterType}>
+                <option value="">All Types</option>
+                {Array.from(new Set((medicines || []).map(m => m.type).filter(Boolean))).sort().map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div className="filter-group">
+              <label className="muted">Tag</label>
+              <input placeholder="Filter by tag" value={filterTag || ''} onChange={e => setFilterTag(e.target.value)} />
+            </div>
+            <div className="filter-group">
+              <label className="muted">Has Tests</label>
+              <select value={filterHasTest || ''} onChange={e => setFilterHasTest(e.target.value)}>
+                <option value="">Either</option>
+                <option value="yes">With Tests</option>
+                <option value="no">No Tests</option>
+              </select>
+            </div>
+            <button className="clear-btn" onClick={() => { setFilterTag(''); setFilterType(''); setFilterHasTest(''); }}>Reset Filters</button>
+          </div>
 
-            <main style={{ flex: 1 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-                {loading ? (
-                  Array.from({ length: 6 }).map((_, idx) => (
-                    <div key={`ph-${idx}`} style={{ background: '#fff', padding: 12, borderRadius: 8, boxShadow: '0 1px 6px rgba(0,0,0,0.06)', minHeight: 120 }}>
-                      <div className="muted">Loading...</div>
+          {/* Main content: list and pagination */}
+          <main style={{ flex: 1, marginTop: '1rem' }}>
+            <div className="medicine-list-container">
+              {loading ? (
+                Array.from({ length: 6 }).map((_, idx) => (
+                  <div key={`ph-${idx}`} className="medicine-list-item-skeleton">
+                    <div className="muted">Loading...</div>
+                  </div>
+                ))
+              ) : (
+                (medicines || [])
+                  .filter(m => !filterType || m.type === filterType)
+                  .filter(m => !filterTag || (m.tags || []).some(t => t.toLowerCase().includes(filterTag.toLowerCase())))
+                  .filter(m => !filterHasTest || (filterHasTest === 'yes' ? (m.testAdvice && m.testAdvice.length > 0) : !(m.testAdvice && m.testAdvice.length > 0)))
+                  .map((m, idx) => (
+                    <div key={m._id || idx} className="medicine-list-item" onClick={() => { handleEdit(m); setDrawerOpen(true); }}>
+                      <div className="medicine-info">
+                        <span className="medicine-name">{m.name || '—'}</span>
+                        <span className="medicine-symptoms muted">{(m.symptoms || []).slice(0, 4).join(', ')}</span>
+                      </div>
+                      <div className="medicine-type-badge" style={{ backgroundColor: getColorForString(m.type) }}>
+                        {m.type || 'N/A'}
+                      </div>
+                      <div className="medicine-actions">
+                        <div style={{ fontWeight: 600, minWidth: '120px' }}>
+                          {(m.medicines || []).length > 0 ? `${m.medicines.length} medicine(s)` : 'No medicines'}
+                        </div>
+                        <div style={{ minWidth: '100px' }}>
+                          {(m.testAdvice || []).length > 0 ? `${m.testAdvice.length} test(s)` : 'No tests'}
+                        </div>
+                        <div className="action-buttons">
+                          <FaEye title="View Details" className="icon-btn" onClick={(e) => { e.stopPropagation(); setViewingAdvice(m); }} />
+                          <FaPen title="Edit" className="icon-btn secondary" onClick={(e) => { e.stopPropagation(); handleOpenEditDrawer(m); }} />
+                          <FaTrash title="Delete" className="icon-btn remove-btn" onClick={(e) => { e.stopPropagation(); handleDelete(m._id); }}/>
+                        </div>
+                      </div>
                     </div>
                   ))
-                ) : (
-                  (medicines || [])
-                    .filter(m => !filterType || !filterType.length || (m.type === filterType))
-                    .filter(m => !filterTag || !filterTag.length || (m.tags || []).join(', ').includes(filterTag))
-                    .filter(m => !filterHasTest || filterHasTest === '' || (filterHasTest === 'yes' ? (m.testAdvice && m.testAdvice.length) : !(m.testAdvice && m.testAdvice.length)))
-                    .map((m, idx) => (
-                      <div key={m._id || idx} style={{ background: '#fff', padding: 12, borderRadius: 8, boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ cursor: 'pointer' }} onClick={() => {
-                            const ids = new Set(openCardIds);
-                            const idKey = m._id || idx;
-                            if (ids.has(idKey)) ids.delete(idKey); else ids.add(idKey);
-                            setOpenCardIds(ids);
-                          }}>
-                            <h3 style={{ margin: 0 }}>{m.name || '—'}</h3>
-                            <div className="muted" style={{ fontSize: 13 }}>{(m.symptoms || []).slice(0, 4).join(', ')}</div>
-                          </div>
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <button title="Edit" className="secondary" onClick={() => { handleEdit(m); setDrawerOpen(true); }}>✎</button>
-                            <button title="Delete" className="remove-btn" onClick={() => handleDelete(m._id)}>🗑</button>
-                          </div>
-                        </div>
-                        <div style={{ marginTop: 8 }}>
-                          <div><strong>Type:</strong> {m.type || '—'}</div>
-                          <div><strong>Route:</strong> {m.route || '—'}</div>
-                        </div>
-                        <div style={{ marginTop: 10 }}>
-                          <div style={{ fontWeight: 600 }}>Medicines</div>
-                          {Array.isArray(m.medicines) && m.medicines.length ? (
-                            <div style={{ marginTop: 6 }}>
-                              {(m.medicines || []).map((med, mi) => (
-                                <div key={mi} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '6px 8px', borderRadius: 6, background: '#fafafa', marginBottom: 6 }}>
-                                  <div>
-                                    <div style={{ fontWeight: 600 }}>{med.name}</div>
-                                    <div className="muted" style={{ fontSize: 13 }}>{med.type} • {med.dose} • {med.frequency}</div>
-                                  </div>
-                                  <div style={{ display: 'flex', gap: 8 }}>
-                                      {/* Inline medicine edit: open drawer and focus this medicine row */}
-                                      <button className="secondary" title="Edit medicine" onClick={() => handleEditMedicineRow(m, mi)}>✎</button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : <div className="muted">No structured medicines</div>}
-                        </div>
-                        {openCardIds.has(m._id || idx) && (
-                          <div style={{ marginTop: 10 }}>
-                            <div style={{ color: '#334155' }}>{m.desese_description}</div>
-                            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                              {(m.tags || []).map(t => <span key={t} style={{ background: '#eef2ff', padding: '4px 8px', borderRadius: 6, fontSize: 12 }}>{t}</span>)}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                )}
-              </div>
+              )}
+            </div>
 
-              <div style={{ marginTop: 12 }}>
-                <div className="pagination">
-                  <button disabled={page <= 1} onClick={() => goToPage(page - 1)}>Prev</button>
-                  {Array.from({ length: totalPages }).slice(0, 7).map((_, idx) => {
-                    const p = idx + 1;
-                    return (
-                      <button key={p} className={p === page ? 'active' : ''} onClick={() => goToPage(p)}>{p}</button>
-                    );
-                  })}
-                  <button disabled={page >= totalPages} onClick={() => goToPage(page + 1)}>Next</button>
-                </div>
-                <div className="footer-note">Showing page {page} of {totalPages}</div>
+            <div style={{ marginTop: 12 }}>
+              <div className="pagination">
+                <button disabled={page <= 1} onClick={() => goToPage(page - 1)}>Prev</button>
+                {Array.from({ length: totalPages }).slice(0, 7).map((_, idx) => {
+                  const p = idx + 1;
+                  return (
+                    <button key={p} className={p === page ? 'active' : ''} onClick={() => goToPage(p)}>{p}</button>
+                  );
+                })}
+                <button disabled={page >= totalPages} onClick={() => goToPage(page + 1)}>Next</button>
               </div>
-            </main>
-          </div>
+              <div className="footer-note">Showing page {page} of {totalPages}</div>
+            </div>
+          </main>
         </div>
+
+        {/* View Details Modal */}
+        {viewingAdvice && (
+          <MedicineCard
+            advice={viewingAdvice}
+            onClose={() => setViewingAdvice(null)}
+            onEdit={handleOpenEditDrawer}
+          />
+        )}
         {/* Drawer for create/edit */}
         {drawerOpen && (
-          <div style={{ position: 'fixed', top: 0, right: 0, width: '480px', height: '100%', background: '#fff', boxShadow: '-4px 0 12px rgba(0,0,0,0.08)', padding: 20, zIndex: 1100, overflowY: 'auto' }}>
+          <div className="edit-drawer">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0 }}>{editingId ? 'Edit Medicine' : 'Add New Medicine'}</h3>
               <div>

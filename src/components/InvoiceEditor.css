@@ -1,0 +1,25 @@
+.invoice-drawer {
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 420px;
+  background: #fff;
+  box-shadow: -4px 0 18px rgba(0,0,0,0.08);
+  z-index: 9999;
+  padding: 16px;
+  overflow: auto;
+}
+.invoice-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 9998;
+}
+.invoice-list { display:flex; flex-direction:column; gap:8px; }
+.invoice-item { border:1px solid #eee; padding:8px; border-radius:6px; display:flex; justify-content:space-between; align-items:center }
+.invoice-item .meta { display:flex; flex-direction:column }
+.invoice-editor { display:flex; flex-direction:column; gap:8px; margin-top:12px }
+.invoice-editor label { font-size:12px; color:#333 }
+.invoice-editor input, .invoice-editor textarea, .invoice-editor select { padding:8px; border:1px solid #ddd; border-radius:6px }
+.btn-small { padding:6px 10px; font-size:13px }
