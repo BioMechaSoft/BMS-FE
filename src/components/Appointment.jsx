@@ -701,10 +701,16 @@ const Appointment = () => {
                     </div>
                   </div>
                   <input
-                    type="number"
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    pattern="\d{10}"
                     placeholder="Mobile Number"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setPhone(v);
+                    }}
                   />
                 </div>
                 <div className="lnr-input-box">
@@ -748,6 +754,7 @@ const Appointment = () => {
                       <input
                         type="text"
                         placeholder="BP (e.g., 120/80 mmHg)"
+                        maxLength={7}
                         value={diagnosys.BP}
                         onChange={(e) => setDiagnosys(d => ({ ...d, BP: e.target.value }))}
                       />
@@ -771,8 +778,12 @@ const Appointment = () => {
                         placeholder="SPO2 (%)"
                         min="0"
                         max="100"
+                        inputMode="numeric"
                         value={diagnosys.SPO2}
-                        onChange={(e) => setDiagnosys(d => ({ ...d, SPO2: e.target.value }))}
+                        onChange={(e) => {
+                          const v = e.target.value
+                          setDiagnosys(d => ({ ...d, SPO2: v && v>100? 100:v }));
+                        }}
                       />
                     </div>
                     <div>
@@ -782,7 +793,10 @@ const Appointment = () => {
                         min="30"
                         max="250"
                         value={diagnosys.Height}
-                        onChange={(e) => setDiagnosys(d => ({ ...d, Height: e.target.value }))}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setDiagnosys(d => ({ ...d, Height: v && v>250? 250:v }))
+                        }}
                       />
                     </div>
                   </div>
@@ -792,10 +806,13 @@ const Appointment = () => {
                       <input
                         type="number"
                         placeholder="Weight (kg)"
-                        min="1"
-                        max="300"
+                        min={1}
+                        max={300}
                         value={diagnosys.Weight}
-                        onChange={(e) => setDiagnosys(d => ({ ...d, Weight: e.target.value }))}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setDiagnosys(d => ({ ...d, Weight: v && v>300? 300:v }))
+                        }}
                       />
                     </div>
                     <div>

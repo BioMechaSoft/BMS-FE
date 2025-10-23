@@ -217,6 +217,7 @@ textarea {
         align-items: center;
     }
     .appointment-form input[type="text"], 
+    .appointment-form input[type="tel"], 
     .appointment-form input[type="search"], 
     .appointment-form input[type="number"],
     .appointment-form input[type="date"], 

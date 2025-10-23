@@ -712,8 +712,8 @@ const Prescription = ({ patientId, onClose }) => {
                             else autoPopulateFromComplaint(label, false, true);
                           }}
                         />
-                        <button type="button" className="icon-btn" title={autoPopulating ? 'Populating...' : 'Auto-populate'} style={{minWidth:"fit-content"}} onClick={() => autoPopulateFromComplaint(initialComplain, true)} disabled={!initialComplain || initialComplain.trim().length < 2}>{autoPopulating ? '⏳' : '⚡'}</button>
-                        <button type="button" className="icon-btn secondary" title="Analyze" style={{minWidth:"fit-content"}} onClick={async () => {
+                        <button type="button" className="icon-btn" title={autoPopulating ? 'Populating...' : 'Auto-populate'} style={{minWidth:"fit-content",overflowY:"hidden"}} onClick={() => autoPopulateFromComplaint(initialComplain, true)} disabled={!initialComplain || initialComplain.trim().length < 2}>{autoPopulating ? '⏳' : '⚡'}</button>
+                        <button type="button" className="icon-btn secondary" title="Analyze" style={{minWidth:"fit-content", overflowY:"hidden"}} onClick={async () => {
                           // call analyze on selected complaints/symptoms
                           const symptoms = selectedComplaints.length ? selectedComplaints.flatMap(c => (c.symptoms || (typeof c === 'string' ? [c] : []))) : (initialComplain ? [initialComplain] : []);
                           try {
@@ -883,7 +883,7 @@ const Prescription = ({ patientId, onClose }) => {
                   </div>
                   {/* Test Advice Table */}
                   {selectedTestTypes.includes("Test Advice") && (
-                    <div className="form-group full-width">
+                    <div className="form-group full-width" style={{overflowX:"auto"}}>
                       <label>Test Advice</label>
                       <table className="test-advice-table">
                         <thead>
@@ -973,9 +973,9 @@ const Prescription = ({ patientId, onClose }) => {
               </>
             )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button className="btn clear-btn" onClick={handleClose}>Close</button>
+          <div className="cross-box" >
             {isDirty ? <span style={{ color: '#b45309' }}>Unsaved changes</span> : <span style={{ color: '#0f766e' }}>Saved</span>}
+            <button className="btn clear-btn" onClick={handleClose}>Close</button>
           </div>
         </div>
 

@@ -499,7 +499,7 @@ const Dashboard = () => {
                           <td>{appointment.gender}</td>
                           {/* <td>{appointment.paymentMode || "Cash"}</td> */}
                           {/* <td>{appointment.price || appointment.feesAmount || "0"}</td> */}
-                          <td>
+                          <td style={{minWidth: "6.5rem"}}>
                             <select value={appointment.paymentStatus || 'Pending'} 
                               onChange={(e) => handleUpdatePaymentStatus(appointment._id, e.target.value)}
                               className={
@@ -507,13 +507,14 @@ const Dashboard = () => {
                                 ? "value-rejected"
                                 : "value-accepted"
                               }
+                              style={{fontSize: "1rem"}}
                             >
                               <option value="Pending" className="value-rejected">Pending</option>
                               {/* <option value="Accepted">Accepted</option> */}
                               <option value="Paid" className="value-accepted">Paid</option>
                             </select>
                           </td>
-                          <td>
+                          <td style={{minWidth: "8rem"}}>
                             <select
                               className={
                                 appointment.status === "Pending"
@@ -529,6 +530,7 @@ const Dashboard = () => {
                                   e.target.value
                                 )
                               }
+                              style={{fontSize: "1rem"}}
                             >
                               <option value="Pending" className="value-pending">
                                 Pending

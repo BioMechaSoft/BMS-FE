@@ -263,7 +263,7 @@ const MedicineSettings = () => {
   <div className="settings-page medicine-page" style={{ padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button onClick={() => navigate(-1)} className="back-btn">←</button>
+              <button onClick={() => navigate(-1)} className="back-btn add-btn">← Go Back</button>
               <div>
                 <h2 style={{ margin: 0 }}>Medicine Catalog</h2>
                 <div className="muted">Create, search and manage medicines used in prescriptions.</div>
