@@ -690,7 +690,7 @@ const Prescription = ({ patientId, onClose }) => {
                             else autoPopulateFromComplaint(newVal || item, false, true);
                           }}
                         />
-                        <button type="button" className="add-btn" style={{minWidth:"fit-content"}} onClick={() => autoPopulateFromComplaint(initialComplain, true)} disabled={!initialComplain || initialComplain.trim().length < 2}>{autoPopulating ? 'Populating...' : 'Auto-populate'}</button>
+                        <button type="button" className="add-btn" style={{minWidth:"fit-content"}} onClick={() => autoPopulateFromComplaint(initialComplain, true)} disabled={!initialComplain || initialComplain?.trim().length < 2}>{autoPopulating ? 'Populating...' : 'Auto-populate'}</button>
                         <button type="button" className="btn secondary" style={{minWidth:"fit-content"}} onClick={async () => {
                           // call analyze on selected complaints/symptoms
                           const symptoms = selectedComplaints.length ? selectedComplaints.flatMap(c => (c.symptoms || (typeof c === 'string' ? [c] : []))) : (initialComplain ? [initialComplain] : []);

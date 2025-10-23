@@ -397,7 +397,7 @@ const Dashboard = () => {
                   <th>Status</th>
                   <th>Doctor</th>
                   <th>Department</th>
-                  <th>Visited</th>
+                  <th>Visited Before</th>
                   <th>Booked By</th>
                   <th>Prescription</th>
                   <th>Actions</th>
