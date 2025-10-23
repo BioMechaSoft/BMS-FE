@@ -24,15 +24,29 @@ const Sidebar = () => {
 
   const handleLogout = async () => {
     try {
-      const res = await api.get(`/api/v1/user/admin/logout`);
-      // Clear all cookies
-      document.cookie.split(';').forEach((c) => {
-        document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date(0).toUTCString() + ';path=/');
+      const res = await api.get(`/api/v1/user/admin/logout`, {
+        withCredentials: true,
       });
-      toast.success(res.data.message);
+
+      // 1. Update React state
       setIsAuthenticated(false);
+      toast.success(res.data.message);
+
+      // 2. Clear local storage and session storage
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // 3. Force a hard reload to the login page to clear all in-memory state
+      // and fetch a fresh version of the app.
+      window.location.href = "/login";
+
     } catch (err) {
+      // Even if logout fails, attempt to clear local state and redirect
+      setIsAuthenticated(false);
+      localStorage.clear();
+      sessionStorage.clear();
       toast.error(err?.response?.data?.message || 'Logout failed');
+      window.location.href = "/login";
     }
   };
 
