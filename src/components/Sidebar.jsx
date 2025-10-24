@@ -8,7 +8,7 @@ import { FaUserDoctor } from "react-icons/fa6";
 import { FaUserNurse, FaUserPlus } from "react-icons/fa";
 import { IoPersonAddSharp } from "react-icons/io5";
 // import { FaPrescription } from "react-icons/fa6";
-import { FiSettings } from "react-icons/fi";
+import { IoMdSettings } from "react-icons/io";
 
 import api from "../utils/api";
 import { toast } from "react-toastify";
@@ -112,7 +112,7 @@ const Sidebar = () => {
           {(["Admin","Doctor","Compounder"].includes(role)) && <BiBarChart onClick={gotoReportsPage} />}
           {/* {(["Admin","Doctor","Compounder"].includes(role)) && <FaPrescription onClick={prescriptionPage} />} */}
           {/* Settings: Admin and Doctor have access to settings */}
-          {(["Admin","Doctor"].includes(role)) && <FiSettings onClick={gotoSettingsPage} />}
+          {(["Admin","Doctor"].includes(role)) && <IoMdSettings onClick={gotoSettingsPage} />}
           <RiLogoutBoxFill onClick={handleLogout} />
         </div>
       </nav>
