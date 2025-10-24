@@ -161,7 +161,7 @@ const Preview = () => {
                                             </div>
                                             <div className="rightCol">
                                                 <p><strong>Date:</strong> {formatDate(patient.updatedAt)}</p>
-                                                {patient.weight && <p><strong>Weight:</strong> {patient.weight}</p>}
+                                                {patient.weight && <p><strong>Weight:</strong> {patient.weight +"kg"}</p>}
                                                 {patient.department && <p><strong>Department:</strong> {patient.department}</p>}
                                             </div>
                                         </div>
@@ -170,7 +170,13 @@ const Preview = () => {
                                         <h4>{"Vitals"}</h4>
                                         {report?.diagnosys && (
                                             <ul className="diagnosis-list">
-                                                {Object.entries(report?.diagnosys).map(([k, v]) => v && <li key={k}><strong>{k}:</strong> {v}</li>)}
+                                                {/* {Object.entries(report?.diagnosys).map(([k, v]) => v && <li key={k}><strong>{k}:</strong> {v}</li>)} */}
+                                                <li><strong>BP: </strong>{report.diagnosys.BP? report.diagnosys.BP+" mmHg":'N/A'}</li>
+                                                <li><strong>Diabetics: </strong>{report.diagnosys.Diabetics? report.diagnosys.Diabetics+" mg/dL":'N/A'}</li>
+                                                <li><strong>SPO2: </strong>{report.diagnosys.SPO2? report.diagnosys.SPO2+"%":'N/A'}</li>
+                                                <li><strong>Height: </strong>{report.diagnosys.Height? report.diagnosys.Height+"cm":'N/A'}</li>
+                                                <li><strong>Weight: </strong>{report.diagnosys.Weight? report.diagnosys.Weight+"kg":'N/A'}</li>
+                                                {report.diagnosys.Others && <li><strong>Others: </strong>{report.diagnosys.Others}</li>}
                                             </ul>
                                         )}
                                     </div>

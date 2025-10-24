@@ -505,13 +505,13 @@ const Dashboard = () => {
                               className={
                                 appointment.paymentStatus === "Pending"
                                 ? "value-rejected"
-                                : "value-accepted"
+                                : "value-completed"
                               }
                               style={{fontSize: "1rem"}}
                             >
                               <option value="Pending" className="value-rejected">Pending</option>
                               {/* <option value="Accepted">Accepted</option> */}
-                              <option value="Paid" className="value-accepted">Paid</option>
+                              <option value="Paid" className="value-completed">Paid</option>
                             </select>
                           </td>
                           <td style={{minWidth: "8rem"}}>
@@ -521,6 +521,8 @@ const Dashboard = () => {
                                   ? "value-pending"
                                   : appointment.status === "Accepted"
                                   ? "value-accepted"
+                                  : appointment.status === "Completed"
+                                  ? "value-completed"
                                   : "value-rejected"
                               }
                               value={appointment.status}

@@ -343,7 +343,7 @@ const Appointment = () => {
         // do not set status from frontend creation; backend will harmonize (Paid -> Accepted at creation)
         status: undefined,
         // match backend schema keys and casing
-        result: [{ diagnosys: diagnosysForPayload }],
+        result: { diagnosys: diagnosysForPayload },
       };
       // payload prepared for appointment creation
       if (!canBook)
@@ -806,8 +806,8 @@ const Appointment = () => {
                       <input
                         type="number"
                         placeholder="Weight (kg)"
-                        min={1}
-                        max={300}
+                        min="1"
+                        max="300"
                         value={diagnosys.Weight}
                         onChange={(e) => {
                           const v = e.target.value;

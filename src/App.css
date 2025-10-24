@@ -293,6 +293,9 @@ body {
   color: #eab308;
 }
 .dashboard .banner table .value-accepted {
+  color: #3971d9f2;
+}
+.dashboard .banner table .value-completed {
   color: #16a34a;
 }
 .dashboard .banner table .value-rejected {
