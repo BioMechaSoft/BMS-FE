@@ -15,6 +15,7 @@ import { MdOutlineContentPasteSearch } from "react-icons/md";
 import { RiCalendarScheduleFill } from "react-icons/ri";
 import { FaEye } from "react-icons/fa";
 import { IoReceipt } from "react-icons/io5";
+import useSound from "use-sound";
 // import Doctors from "./Doctors";
 
 const Dashboard = () => {
@@ -32,6 +33,10 @@ const Dashboard = () => {
   const [selectedPatientData, setSelectedPatientData] = useState(null);
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
   const [activeInvoice, setActiveInvoice] = useState(null);
+
+  // Note: Sound file should be in the `public` directory.
+  const [playDeleteSound] = useSound("/delete.mp3");
+  const [playSettledSound] = useSound("/settled.mp3");
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -61,6 +66,9 @@ const Dashboard = () => {
         setAppointments((prev) => prev.map(a => a._id === appointmentId ? { ...a, paymentStatus: paymentStatus } : a));
       }
       toast.success(data.message || 'Payment status updated');
+      if (paymentStatus === "Paid") {
+        playSettledSound();
+      }
     } catch (e) {
       toast.error(e?.response?.data?.message || 'Failed to update payment status');
     }
@@ -93,6 +101,7 @@ const Dashboard = () => {
       setAppointments((prev) => prev.filter((a) => a._id !== id));
       setSelectedAppointments((prev) => prev.filter((x) => x !== id));
       toast.success("Appointment deleted");
+      playDeleteSound();
     } catch (err) {
       toast.error("Delete failed");
     }
@@ -113,6 +122,7 @@ const Dashboard = () => {
       );
       setSelectedAppointments([]);
       toast.success("Bulk delete complete");
+      playDeleteSound();
     } catch (err) {
       toast.error("Bulk delete failed");
     }
@@ -136,6 +146,9 @@ const Dashboard = () => {
         setAppointments((prev) => prev.map((a) => (a._id === appointmentId ? updatedAppt : a)));
       }
       toast.success(data.message || 'Status updated');
+      if (updatedAppt && updatedAppt.paymentStatus === "Paid") {
+        playSettledSound();
+      }
     } catch (error) {
       toast.error(error.response.data.message);
     }
@@ -592,7 +605,7 @@ const Dashboard = () => {
                                   cursor: "pointer",
                                 }}
                               >
-                                <RiCalendarScheduleFill />
+                                <RiCalendarScheduleFill title="Reschedule"/>
                               </button>
                               <button
                                 style={{
@@ -603,7 +616,7 @@ const Dashboard = () => {
                                 }}
                                 onClick={()=>navigate(`/preview/${appointment.patientId}`)}
                               >
-                                <FaEye />
+                                <FaEye title="View prescription"/>
                               </button>
                               <button
                                 style={{
@@ -616,7 +629,7 @@ const Dashboard = () => {
                                   handleInvoiceClick(appointment._id)
                                 }
                               >
-                                <IoReceipt />
+                                <IoReceipt title="Invoice"/>
                               </button>
                               <RequirePermission allowedRoles={["Admin"]}>
                                 <button
@@ -630,7 +643,7 @@ const Dashboard = () => {
                                     cursor: "pointer",
                                   }}
                                 >
-                                  <FaTrash />
+                                  <FaTrash title="Delete"/>
                                 </button>
                               </RequirePermission>
                             </div>

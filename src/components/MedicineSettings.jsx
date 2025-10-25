@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
+import { toast } from "react-toastify";
 import "./Settings.css";
 import MedicineCard from "./MedicineCard";
 import { FaEye, FaPen } from "react-icons/fa";
 import { FaTrash } from "react-icons/fa6";
+import useSound from "use-sound";
 
 const emptyForm = {
   name: "",
@@ -46,6 +48,9 @@ const MedicineSettings = () => {
   const [filterTag, setFilterTag] = useState('');
   const [filterHasTest, setFilterHasTest] = useState('');
   const [viewingAdvice, setViewingAdvice] = useState(null);
+
+  const [playDeleteSound] = useSound("/delete.mp3");
+  const [playSettledSound] = useSound("/settled.mp3");
 
   useEffect(() => {
     fetchMedicines();
@@ -169,9 +174,12 @@ const MedicineSettings = () => {
       };
       if (editingId) {
   await api.put(`/api/v1/medical/${editingId}`, payload);
+        toast.success("Medical advice updated successfully!");
       } else {
   await api.post(`/api/v1/medical/`, payload);
+        toast.success("Medical advice created successfully!");
       }
+      playSettledSound();
       setForm(emptyForm);
   setEditingId(null);
   // clear focused medicine selection and refs after save
@@ -179,7 +187,7 @@ const MedicineSettings = () => {
   medicineRowRefs.current = {};
       await fetchMedicines();
     } catch (err) {
-      setError("Failed to save medicine");
+      toast.error(err?.response?.data?.message || "Failed to save medical advice");
     } finally {
       setSaving(false);
     }
@@ -237,9 +245,11 @@ const MedicineSettings = () => {
     if (!confirm("Delete this medicine?")) return;
     try {
   await api.delete(`/api/v1/medical/${id}`);
+      playDeleteSound();
+      toast.success("Deleted successfully.");
       setMedicines(prev => prev.filter(p => p._id !== id));
     } catch (e) {
-      setError("Failed to delete");
+      toast.error(e?.response?.data?.message || "Failed to delete");
     }
   };
 

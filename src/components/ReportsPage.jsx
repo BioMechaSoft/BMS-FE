@@ -7,6 +7,7 @@ import { FaEye } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { RiMoneyRupeeCircleFill } from "react-icons/ri";
 import { FaSearch } from "react-icons/fa";
+import useSound from "use-sound";
 
 const fmt = (n) => {
   const v = Number(n) || 0;
@@ -57,6 +58,8 @@ const ReportsPage = () => {
   const [reportTotal, setReportTotal] = useState(0);
   const [patientsThisMonth, setPatientsThisMonth] = useState(0);
   const [totalAppointments, setTotalAppointments] = useState(0);
+
+  const [playSettledSound] = useSound("/settled.mp3");
 
   useEffect(() => {
     // load doctors for filter
@@ -232,6 +235,9 @@ const ReportsPage = () => {
       );
       setInvoicesForAppointment(refreshed.data.invoices || []);
       setSelectedInvoice(null);
+      if (payload.status === "Paid") {
+        playSettledSound();
+      }
       fetchSummary();
     } catch (e) {
       console.warn("Failed to save invoice", e);
@@ -262,6 +268,7 @@ const ReportsPage = () => {
         `/api/v1/invoice/appointment/${drawerAppointmentId}`
       );
       setInvoicesForAppointment(refreshed.data.invoices || []);
+      playSettledSound();
       fetchSummary();
     } catch (e) {
       console.warn("Failed to settle invoice", e);
@@ -536,10 +543,12 @@ const ReportsPage = () => {
                   <td>{r.status}</td>
                   <td style={{ display: "flex", gap: "1rem",alignItems:"center" }}>
                     <FaEye 
+                      title="View Details"
                       style={{color:"#096dd9"}}
                       onClick={() => openInvoiceDrawer(r.appointmentId)} 
                     />
                     <MdDelete 
+                      title="Delete"
                       style={{color:"var(--danger-color)"}}
                       onClick={async () => {
                         if (window.confirm("Delete this report entry?")) {
@@ -549,6 +558,7 @@ const ReportsPage = () => {
                       }}
                     />
                     <RiMoneyRupeeCircleFill 
+                      title="Mark as paid"
                       style={{color:"var(--secondary-color)"}}
                       onClick={async () => {
                         if (
