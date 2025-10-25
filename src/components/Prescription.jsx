@@ -1523,7 +1523,7 @@ const Prescription = ({ patientId, onClose }) => {
                 <div className="form-group">
                   <label>Diabetics (mg/dL)</label>
                   <input
-                    type="text"
+                    type="number"
                     placeholder="Diabetes (mg/dL)"
                     min="20"
                     max="600"
