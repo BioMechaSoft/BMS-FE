@@ -308,11 +308,11 @@ const Appointment = () => {
 
       // Append units to diagnosys fields for the payload
       const diagnosysForPayload = {
-        BP: diagnosys.BP ? `${diagnosys.BP} mmHg` : undefined,
-        Diabetics: diagnosys.Diabetics ? `${diagnosys.Diabetics} mg/dL` : undefined,
-        SPO2: diagnosys.SPO2 ? `${diagnosys.SPO2} %` : undefined,
-        Height: diagnosys.Height ? `${diagnosys.Height} cm` : undefined,
-        Weight: diagnosys.Weight ? `${diagnosys.Weight} kg` : undefined,
+        BP: diagnosys.BP ? diagnosys.BP : undefined,
+        Diabetics: diagnosys.Diabetics ? diagnosys.Diabetics : undefined,
+        SPO2: diagnosys.SPO2 ? diagnosys.SPO2 : undefined,
+        Height: diagnosys.Height ? diagnosys.Height : undefined,
+        Weight: diagnosys.Weight ? diagnosys.Weight : undefined,
         Others: othersValue || undefined,
       };
 
@@ -766,7 +766,10 @@ const Appointment = () => {
                         min="20"
                         max="600"
                         value={diagnosys.Diabetics}
-                        onChange={(e) => setDiagnosys(d => ({ ...d, Diabetics: e.target.value }))}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setDiagnosys(d => ({ ...d, Diabetics: v && v>600? 600:v }))
+                        }}
                       />
                     </div>
                   </div>

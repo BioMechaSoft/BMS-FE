@@ -1509,7 +1509,7 @@ const Prescription = ({ patientId, onClose }) => {
               <br />
               <div className="form-row">
                 <div className="form-group">
-                  <label>BP</label>
+                  <label>BP (mmHg)</label>
                   <input
                     type="text"
                     placeholder="BP (e.g., 120/80 mmHg)"
@@ -1521,9 +1521,9 @@ const Prescription = ({ patientId, onClose }) => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Diabetics</label>
+                  <label>Diabetics (mg/dL)</label>
                   <input
-                    type="number"
+                    type="text"
                     placeholder="Diabetes (mg/dL)"
                     min="20"
                     max="600"
@@ -1535,7 +1535,7 @@ const Prescription = ({ patientId, onClose }) => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>SPO2</label>
+                  <label>SPO2 (%)</label>
                   <input
                     type="number"
                     placeholder="SPO2 (%)"
@@ -1550,7 +1550,7 @@ const Prescription = ({ patientId, onClose }) => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Height</label>
+                  <label>Height (cm)</label>
                   <input
                     type="number"
                     placeholder="Height (cm)"
@@ -1564,7 +1564,7 @@ const Prescription = ({ patientId, onClose }) => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Weight</label>
+                  <label>Weight (kg)</label>
                   <input
                     type="number"
                     placeholder="Weight (kg)"
