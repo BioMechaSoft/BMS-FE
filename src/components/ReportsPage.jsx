@@ -383,7 +383,7 @@ const ReportsPage = () => {
                   <option value="month">Month</option>
                 </select>
               </label>
-              <label style={{ display: "flex", flexDirection: "column" }}>
+              <label>
                 Doctor
                 <select
                   value={doctorId}
@@ -534,7 +534,7 @@ const ReportsPage = () => {
                   <td>{fmt(r.paid || r.revenue)}</td>
                   <td>{fmt(r.due)}</td>
                   <td>{r.status}</td>
-                  <td style={{ display: "flex", gap: "1rem" }}>
+                  <td style={{ display: "flex", gap: "1rem",alignItems:"center" }}>
                     <FaEye 
                       style={{color:"#096dd9"}}
                       onClick={() => openInvoiceDrawer(r.appointmentId)} 
